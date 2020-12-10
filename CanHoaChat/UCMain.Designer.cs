@@ -28,48 +28,54 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.mCanTuDong = new MetroFramework.Controls.MetroTile();
             this.mCanBanTuDong = new MetroFramework.Controls.MetroTile();
+            this.metroTile1 = new MetroFramework.Controls.MetroTile();
             this.SuspendLayout();
-            // 
-            // mCanTuDong
-            // 
-            this.mCanTuDong.ActiveControl = null;
-            this.mCanTuDong.Location = new System.Drawing.Point(760, 370);
-            this.mCanTuDong.Name = "mCanTuDong";
-            this.mCanTuDong.Size = new System.Drawing.Size(202, 104);
-            this.mCanTuDong.TabIndex = 0;
-            this.mCanTuDong.Text = "Cân tự động";
-            this.mCanTuDong.UseSelectable = true;
-            this.mCanTuDong.Click += new System.EventHandler(this.mCanTuDong_Click);
             // 
             // mCanBanTuDong
             // 
             this.mCanBanTuDong.ActiveControl = null;
-            this.mCanBanTuDong.Location = new System.Drawing.Point(1067, 370);
+            this.mCanBanTuDong.Location = new System.Drawing.Point(762, 299);
+            this.mCanBanTuDong.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.mCanBanTuDong.Name = "mCanBanTuDong";
-            this.mCanBanTuDong.Size = new System.Drawing.Size(202, 104);
+            this.mCanBanTuDong.Size = new System.Drawing.Size(180, 83);
             this.mCanBanTuDong.TabIndex = 0;
             this.mCanBanTuDong.Text = "Cân bán tự động";
+            this.mCanBanTuDong.TileTextFontSize = MetroFramework.MetroTileTextSize.Tall;
+            this.mCanBanTuDong.TileTextFontWeight = MetroFramework.MetroTileTextWeight.Bold;
             this.mCanBanTuDong.UseSelectable = true;
             this.mCanBanTuDong.Click += new System.EventHandler(this.mCanBanTuDong_Click);
             // 
+            // metroTile1
+            // 
+            this.metroTile1.ActiveControl = null;
+            this.metroTile1.Location = new System.Drawing.Point(533, 299);
+            this.metroTile1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.metroTile1.Name = "metroTile1";
+            this.metroTile1.Size = new System.Drawing.Size(180, 83);
+            this.metroTile1.TabIndex = 0;
+            this.metroTile1.Text = "Mở bồn hóa chất";
+            this.metroTile1.TileTextFontSize = MetroFramework.MetroTileTextSize.Tall;
+            this.metroTile1.TileTextFontWeight = MetroFramework.MetroTileTextWeight.Bold;
+            this.metroTile1.UseSelectable = true;
+            this.metroTile1.Click += new System.EventHandler(this.mCanTuDong_Click);
+            // 
             // UCMain
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.metroTile1);
             this.Controls.Add(this.mCanBanTuDong);
-            this.Controls.Add(this.mCanTuDong);
+            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "UCMain";
-            this.Size = new System.Drawing.Size(1950, 900);
+            this.Size = new System.Drawing.Size(1733, 720);
             this.Load += new System.EventHandler(this.UCMain_Load);
             this.ResumeLayout(false);
 
         }
 
         #endregion
-
-        private MetroFramework.Controls.MetroTile mCanTuDong;
         private MetroFramework.Controls.MetroTile mCanBanTuDong;
+        private MetroFramework.Controls.MetroTile metroTile1;
     }
 }

@@ -35,6 +35,7 @@ namespace CanHoaChat
         public static void openThread()
         { }
 
+        DataTable dtBuckets = new DataTable();
         DataTable dtM = new DataTable();
         DataTable dtChoose = new DataTable();
         DataTable dtChooseCTY = new DataTable();
@@ -60,10 +61,40 @@ namespace CanHoaChat
             cbLenh.DisplayMember = "ManufactureOrderNo";
             cbLenh.ValueMember = "ManufactureOrderNo";
 
+            Au = null;
+            Total = null;
+            soau = 1;
+            autrung = false;
+            Total_Temp = null;
+            Stt_Temp = 0;
+            Stt_Can_Temp = 0;
+            Stt_Au_Temp = 1;
+            QRCode = "";
+            autrung = false;
+            aule = false;
+            inlai = false;
             //Mở cổng com kiểm tra cân điện
+            PLCOpen();
             COMOpen();
         }
 
+        public void PLCOpen()
+        {
+            try
+            {
+                cJ2Compolet1.UseRoutePath = false;
+                cJ2Compolet1.PeerAddress = "10.0.14.22";
+                cJ2Compolet1.LocalPort = 2;
+                cJ2Compolet1.Active = true;
+            }
+            catch (Exception ex)
+            {
+                btRun.Enabled = false;
+                timer1.Enabled = false;
+                msg m = new msg("Không kết nối được PLC");
+                m.Show();
+            }
+        }
         public void COMOpen()
         {
             if (comport.IsOpen == true)
@@ -71,7 +102,7 @@ namespace CanHoaChat
 
             try
             {
-                string strCOMname = "COM5";
+                string strCOMname = "COM6";
                 comport.PortName = strCOMname.Trim();
                 comport.BaudRate = 9600;
                 comport.Parity = System.IO.Ports.Parity.None;
@@ -185,6 +216,7 @@ namespace CanHoaChat
             {
                 a.Abort();
             }
+
             COMOpen();
             btIn.Enabled = false;
             lbMaKeo.Visible = true;
@@ -194,18 +226,20 @@ namespace CanHoaChat
 
             //Lấy thông tin của lệnh vừa được chọn
             var expression = "ManufactureOrderNo = '" + cbLenh.Text.ToString() + "'";
+            dtBuckets = SQL_Conn.SelectBuckets(cbLenh.Text.ToString());
             dtChoose = dtM.Select(expression).CopyToDataTable();
             dtChooseCTY = SQL_Conn.SelectCommandCTY(cbLenh.Text.ToString());
             MaterialTemp = SQL_Conn.SelectCommandTemp(cbLenh.Text.ToString());
             Au = new string[int.Parse(dtChoose.Rows[0][3].ToString()), 2]; //Khai báo số Âu theo lệnh điều động
             Total = new string[int.Parse(dtChoose.Rows[0][3].ToString()), 2]; //Khai báo tổng số lượng của từng âu
 
+
             //Gán dữ liệu để quét tiếp nếu bị lỗi cân khi đang quét
             for (int i = 0; i < MaterialTemp.Rows.Count; i++)
             {
                 Au[i, 0] = MaterialTemp.Rows[i][1].ToString();
-                Total[i, 0] = MaterialTemp.Rows[i][1].ToString();
                 Au[i, 1] = MaterialTemp.Rows[i][4].ToString();
+                Total[i, 0] = MaterialTemp.Rows[i][1].ToString();               
                 Total[i, 1] = MaterialTemp.Rows[i][5].ToString();
 
                 int ChemicalStt = int.Parse(MaterialTemp.Rows[i][3].ToString());
@@ -245,21 +279,44 @@ namespace CanHoaChat
         string result = "";
         public void getMaterial()
         {
+            string[] open = new string[2]; //Mo thung
+            string[] light = new string[2]; //Mo den
             int j = 5;
+            int l = 0; //Thu tu plc
             soau = Stt_Can_Temp + 1;
             if (Stt_Temp > 0)
             {
                 j = 5 + ((Stt_Temp - 1) * 2);
             }
-
+           
             for (int i = 0; i < dtChooseCTY.Rows.Count; i++)
             {
+                for (int k = 0; k < dtBuckets.Rows.Count; k++)
+                {
+                    light = dtBuckets.Rows[k][3].ToString().Split('.');
+                    try
+                    {
+                        cJ2Compolet1.ForceSet(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(light[0]), Int16.Parse(light[1]));
+                    }
+                    catch { }
+                }
+
                 //Lấy dữ liệu từ cột 5 đến cột 32 tương đương với 14 chất và khối lượng
                 for (; j <= 32; j++)
                 {
                     //Kiểm tra xem cột hóa chất có bị rỗng không
                     if (dtChooseCTY.Rows[i][j].ToString() != "" && dtChooseCTY.Rows[i][j].ToString() != "0")
                     {
+                        //Set den, mo thung plc                        
+                        open = dtBuckets.Rows[l][2].ToString().Split('.');
+                        light = dtBuckets.Rows[l][3].ToString().Split('.');
+
+                        try
+                        {
+                            cJ2Compolet1.ForceSet(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(open[0]), Int16.Parse(open[1]));
+                        }
+                        catch { }
+                        
                         //Nháy màu thay đổi tên nguyên liệu
                         if (this.InvokeRequired)
                         {
@@ -285,7 +342,7 @@ namespace CanHoaChat
                             {
                                 SetTextCallback d = new SetTextCallback(SetLabelNL);
                                 this.Invoke
-                                    (d, new object[] { dtChooseCTY.Rows[i][j].ToString()});
+                                    (d, new object[] { dtChooseCTY.Rows[i][j].ToString() });
                             }
 
                             //Set label số thứ tự hộp
@@ -299,7 +356,7 @@ namespace CanHoaChat
                             result = COMgetData(dtChooseCTY.Rows[soau - 1][j + 1].ToString()); //Lấy liệu từ cổng COM
                             Thread.Sleep(50);
                             if (result == "OK")
-                            {                   
+                            {
                                 //Update bảng lưu tạm
                                 if (this.InvokeRequired)
                                 {
@@ -322,7 +379,7 @@ namespace CanHoaChat
                                 }
 
                                 soau++;
-                                
+
                                 //Cân đủ khối lượng chuyển sang chất kế tiếp   
                                 if (soau > int.Parse(dtChoose.Rows[i][3].ToString()))
                                 {
@@ -330,7 +387,7 @@ namespace CanHoaChat
                                     result = "OK";
                                 }
                                 else
-                                {                                   
+                                {
                                     Thread.Sleep(5000);
                                     //Set màu cho label số hộp
                                     if (this.InvokeRequired)
@@ -351,11 +408,33 @@ namespace CanHoaChat
                             this.Invoke
                                 (d, new object[] { soau.ToString() });
                         }
+
+                        Thread.Sleep(3000);
+                        //Close plc
+                        try
+                        {
+                            cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(open[0]), Int16.Parse(open[1]));
+                            cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(light[0]), Int16.Parse(light[1]));
+                        }
+                        catch
+                        {
+
+                        }
                     }
+                               
                     j++;
+                    l++;
                     result = "";
                 }
             }
+            for (int i = 0; i < dtBuckets.Rows.Count; i++)
+            {
+                open = dtBuckets.Rows[i][2].ToString().Split('.');
+                light = dtBuckets.Rows[i][3].ToString().Split('.');
+                cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(open[0]), Int16.Parse(open[1]));
+                cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(light[0]), Int16.Parse(light[1]));
+            }
+
             bool b = SQL_Conn.updateCommand(dtChooseCTY.Rows[0][0].ToString()); //Cập nhật hoàn thành lệnh
             stoptime = true; //Dừng cân
         }
@@ -386,11 +465,11 @@ namespace CanHoaChat
         }
         private void UpdateTemp(string text)
         {
-            if (text == "1")
+            if (text == "1") //Update tạm bì hộp
                 SQL_Conn.updateAuTemp(cbLenh.Text.ToString(), txtCanAu.WaterMark, txtQRAu.Text, stt.ToString());
-            if (text == "2")
+            if (text == "2") //Update tạm số hộp
                 SQL_Conn.updateAuTotalTemp(cbLenh.Text, Total[soau - 1, 1], soau.ToString());
-            if (text == "3")
+            if (text == "3") //Update tạp số thứ tự hóa chất
                 SQL_Conn.updateSttTemp(cbLenh.Text, soau.ToString());
         }
         private void SetNL(string text)
@@ -547,7 +626,7 @@ namespace CanHoaChat
                                 Thread.Sleep(50); //Dừng 0.2s
                             }
 
-                            //Đủ 7s
+                            //Đủ 10s
                             if (timer3.Enabled == false)
                             {
                                 Au[stt - 1, 0] = txtQRAu.Text; //Gán QR vào mảng Au
@@ -673,6 +752,7 @@ namespace CanHoaChat
                     m.Show();
                     a.Abort();
                     btIn.Enabled = true;
+                    Error.PrintError = "";
 
                     //Cập nhật lại bảng lệnh điều động
                     dtM = SQL_Conn.SelectCommand();
@@ -805,7 +885,7 @@ namespace CanHoaChat
         private void timer3_Tick(object sender, EventArgs e)
         {
             demau++;
-            if (demau == 7)
+            if (demau == 10)
             {
                 timer3.Enabled = false;
                 demau = 1;
@@ -868,7 +948,6 @@ namespace CanHoaChat
             Au = new string[MaterialTemp.Rows.Count, 2]; //Khai báo số Âu theo lệnh điều động
             Total = new string[MaterialTemp.Rows.Count, 2]; //Khai báo tổng số lượng của từng âu
 
-            //Gán dữ liệu để quét tiếp nếu bị lỗi cân khi đang quét
             for (int i = 0; i < MaterialTemp.Rows.Count; i++)
             {
                 Au[i, 0] = MaterialTemp.Rows[i][1].ToString();

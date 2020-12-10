@@ -41,6 +41,70 @@ namespace CanHoaChat
             }
 
         }
+        public static DataTable SelectBuckets(string mo)
+        {
+            string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
+            //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("sp_CanDien", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                     new SqlParameter("@ManufactureOrderNo", mo));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@type", "SelectBuckets"));
+                    SqlDataReader sdr = cmd.ExecuteReader();
+                    DataTable dt = new DataTable();
+                    dt.Load(sdr);
+                    return dt;
+                }
+                catch (Exception ex)
+                {
+                    return new DataTable();
+                }
+                finally
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        conn.Close();
+                }
+            }
+
+        }
+        public static DataTable GetBucketPosition(int bucketID)
+        {
+            string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
+            //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("sp_CanDien", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                     new SqlParameter("@BucketID", bucketID));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@type", "GetPosition"));
+                    SqlDataReader sdr = cmd.ExecuteReader();
+                    DataTable dt = new DataTable();
+                    dt.Load(sdr);
+                    return dt;
+                }
+                catch (Exception ex)
+                {
+                    return new DataTable();
+                }
+                finally
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        conn.Close();
+                }
+            }
+
+        }
         public static DataTable SelectCommandPrint()
         {
             string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";

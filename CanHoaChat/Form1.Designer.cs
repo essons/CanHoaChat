@@ -37,9 +37,10 @@
             // 
             this.mlBack.Image = global::CanHoaChat.Properties.Resources.icons8_back_64;
             this.mlBack.ImageSize = 32;
-            this.mlBack.Location = new System.Drawing.Point(90, 27);
+            this.mlBack.Location = new System.Drawing.Point(80, 22);
+            this.mlBack.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.mlBack.Name = "mlBack";
-            this.mlBack.Size = new System.Drawing.Size(75, 53);
+            this.mlBack.Size = new System.Drawing.Size(67, 42);
             this.mlBack.TabIndex = 1;
             this.mlBack.UseSelectable = true;
             this.mlBack.Click += new System.EventHandler(this.mlBack_Click);
@@ -48,26 +49,29 @@
             // 
             this.mResult.HorizontalScrollbarBarColor = true;
             this.mResult.HorizontalScrollbarHighlightOnWheel = false;
-            this.mResult.HorizontalScrollbarSize = 10;
-            this.mResult.Location = new System.Drawing.Point(23, 86);
+            this.mResult.HorizontalScrollbarSize = 8;
+            this.mResult.Location = new System.Drawing.Point(20, 69);
+            this.mResult.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.mResult.Name = "mResult";
-            this.mResult.Size = new System.Drawing.Size(1890, 993);
+            this.mResult.Size = new System.Drawing.Size(1680, 794);
             this.mResult.TabIndex = 2;
             this.mResult.VerticalScrollbarBarColor = true;
             this.mResult.VerticalScrollbarHighlightOnWheel = false;
-            this.mResult.VerticalScrollbarSize = 10;
+            this.mResult.VerticalScrollbarSize = 9;
             // 
             // Form1
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1920, 1080);
+            this.ClientSize = new System.Drawing.Size(1707, 864);
             this.Controls.Add(this.mResult);
             this.Controls.Add(this.mlBack);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MaximumSize = new System.Drawing.Size(1920, 1080);
-            this.MinimumSize = new System.Drawing.Size(1918, 1018);
+            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.MaximumSize = new System.Drawing.Size(1707, 864);
+            this.MinimumSize = new System.Drawing.Size(1705, 814);
             this.Name = "Form1";
+            this.Padding = new System.Windows.Forms.Padding(18, 48, 18, 16);
             this.Text = "              Hệ thống cân hóa chất ESSONS";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);

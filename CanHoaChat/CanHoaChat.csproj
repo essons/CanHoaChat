@@ -53,6 +53,13 @@
   <PropertyGroup />
   <PropertyGroup />
   <ItemGroup>
+    <Reference Include="CIPCompolet, Version=1.7.0.0, Culture=neutral, PublicKeyToken=f3505d5782c23c5d, processorArchitecture=MSIL" />
+    <Reference Include="CIPMessaging, Version=1.7.0.0, Culture=neutral, PublicKeyToken=f3505d5782c23c5d" />
+    <Reference Include="CIPObjectLibrary, Version=1.7.0.0, Culture=neutral, PublicKeyToken=f3505d5782c23c5d" />
+    <Reference Include="CommonCipService, Version=1.7.0.0, Culture=neutral, PublicKeyToken=f3505d5782c23c5d" />
+    <Reference Include="CompoletDataManager, Version=1.7.0.0, Culture=neutral, PublicKeyToken=f3505d5782c23c5d" />
+    <Reference Include="CompoletFramework, Version=1.7.0.0, Culture=neutral, PublicKeyToken=f3505d5782c23c5d" />
+    <Reference Include="FgwDotnet, Version=1.0.0.4, Culture=neutral, PublicKeyToken=e010e60d6deeb244" />
     <Reference Include="MetroFramework, Version=1.4.0.0, Culture=neutral, PublicKeyToken=5f91a84759bf584a, processorArchitecture=MSIL">
       <HintPath>..\packages\MetroModernUI.1.4.0.0\lib\net\MetroFramework.dll</HintPath>
     </Reference>
@@ -62,11 +69,13 @@
     <Reference Include="MetroFramework.Fonts, Version=1.4.0.0, Culture=neutral, PublicKeyToken=5f91a84759bf584a, processorArchitecture=MSIL">
       <HintPath>..\packages\MetroModernUI.1.4.0.0\lib\net\MetroFramework.Fonts.dll</HintPath>
     </Reference>
+    <Reference Include="PLCDevice, Version=1.7.0.0, Culture=neutral, PublicKeyToken=f3505d5782c23c5d" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="QRCoder, Version=1.3.9.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\QRCoder.1.3.9\lib\net40\QRCoder.dll</HintPath>
     </Reference>
+    <Reference Include="SysmacCipService, Version=1.7.0.0, Culture=neutral, PublicKeyToken=f3505d5782c23c5d" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -131,6 +140,7 @@
     <EmbeddedResource Include="msgPrintError.resx">
       <DependentUpon>msgPrintError.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Properties\licenses.licx" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
