@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using MetroFramework.Controls;
 
 namespace CanHoaChat
 {
@@ -35,6 +36,7 @@ namespace CanHoaChat
 
         private void UCCanTuDong_Load(object sender, EventArgs e)
         {
+            timeout = 0;
             PLCOpen();
             txtQRCode.Focus();
         }
@@ -67,6 +69,18 @@ namespace CanHoaChat
                 catch { }
 
                 txtQRCode.Text = "";
+            }
+        }
+
+
+        int timeout = 0;
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            timeout = timeout + 5;
+            if (timeout >= 700)
+            {
+                MetroLink link = (Form1.Instance.Controls["mlBack"] as MetroLink);
+                link.PerformClick();
             }
         }
     }

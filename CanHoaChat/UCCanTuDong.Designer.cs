@@ -32,6 +32,7 @@
             this.metroLabel1 = new MetroFramework.Controls.MetroLabel();
             this.txtQRCode = new MetroFramework.Controls.MetroTextBox();
             this.cJ2Compolet1 = new OMRON.Compolet.CIP.CJ2Compolet(this.components);
+            this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // metroLabel1
@@ -50,9 +51,9 @@
             // 
             // 
             this.txtQRCode.CustomButton.Image = null;
-            this.txtQRCode.CustomButton.Location = new System.Drawing.Point(235, 1);
+            this.txtQRCode.CustomButton.Location = new System.Drawing.Point(242, 2);
             this.txtQRCode.CustomButton.Name = "";
-            this.txtQRCode.CustomButton.Size = new System.Drawing.Size(21, 21);
+            this.txtQRCode.CustomButton.Size = new System.Drawing.Size(35, 35);
             this.txtQRCode.CustomButton.Style = MetroFramework.MetroColorStyle.Blue;
             this.txtQRCode.CustomButton.TabIndex = 1;
             this.txtQRCode.CustomButton.Theme = MetroFramework.MetroThemeStyle.Light;
@@ -88,6 +89,12 @@
             this.cJ2Compolet1.RoutePath = "";
             this.cJ2Compolet1.UseRoutePath = false;
             // 
+            // timer1
+            // 
+            this.timer1.Enabled = true;
+            this.timer1.Interval = 5000;
+            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            // 
             // UCCanTuDong
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -107,5 +114,6 @@
         private MetroFramework.Controls.MetroLabel metroLabel1;
         private MetroFramework.Controls.MetroTextBox txtQRCode;
         private OMRON.Compolet.CIP.CJ2Compolet cJ2Compolet1;
+        private System.Windows.Forms.Timer timer1;
     }
 }

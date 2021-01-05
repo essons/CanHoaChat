@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace CanHoaChat
 {
-    class Error
+    class FormUsed
     {
-        public static string User { get; set; }
-        public static string PrintError { get; set; }
+        public static string FormNow { get; set; }
     }
 }

@@ -8,6 +8,7 @@ using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Input;
 
 namespace CanHoaChat
 {
@@ -28,6 +29,11 @@ namespace CanHoaChat
         private void button1_Click(object sender, EventArgs e)
         {
             this.Close();
+        }
+
+        private void msg_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            
         }
     }
 }
