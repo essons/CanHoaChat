@@ -6,6 +6,7 @@ using System.Linq;
 using System.Management.Instrumentation;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 
 namespace CanHoaChat
 {
@@ -71,6 +72,39 @@ namespace CanHoaChat
             }
 
         }
+
+        public static DataTable GetSortMaterial(string sothe)
+        {
+            string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
+            //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("sp_CanDien", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                     new SqlParameter("@SoThe", sothe));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@type", "GetSortMaterial"));
+                    SqlDataReader sdr = cmd.ExecuteReader();
+                    DataTable dt = new DataTable();
+                    dt.Load(sdr);
+                    return dt;
+                }
+                catch (Exception ex)
+                {
+                    return new DataTable();
+                }
+                finally
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        conn.Close();
+                }
+            }
+
+        }
         public static DataTable CheckPrint(string mo)
         {
             string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
@@ -103,6 +137,281 @@ namespace CanHoaChat
             }
 
         }
+        public static DataTable CountMaterialT2(string mo, string materialname)
+        {
+            string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
+            //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("sp_CanDien", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                     new SqlParameter("@ManufactureOrderNo", mo));
+                    cmd.Parameters.Add(
+                    new SqlParameter("@MaterialName", materialname));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@type", "CountMaterialTram2"));
+                    SqlDataReader sdr = cmd.ExecuteReader();
+                    DataTable dt = new DataTable();
+                    dt.Load(sdr);
+                    return dt;
+                }
+                catch (Exception ex)
+                {
+                    return new DataTable();
+                }
+                finally
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        conn.Close();
+                }
+            }
+
+        }
+        public static DataTable CheckPrintQT1(string mo, string sothe, string aunumber)
+        {
+            string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
+            //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("sp_CanDien", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                     new SqlParameter("@ManufactureOrderNo", mo));
+                    cmd.Parameters.Add(
+                     new SqlParameter("@SoThe", sothe));
+                    cmd.Parameters.Add(
+                     new SqlParameter("@AuNumber", aunumber));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@type", "CheckPrintQT1"));
+                    SqlDataReader sdr = cmd.ExecuteReader();
+                    DataTable dt = new DataTable();
+                    dt.Load(sdr);
+                    return dt;
+                }
+                catch (Exception ex)
+                {
+                    return new DataTable();
+                }
+                finally
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        conn.Close();
+                }
+            }
+
+        }
+        public static bool updateCompTram2(string ManufactureOrderNo, string MaterialName, double weight, string intime)
+        {
+            string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
+            //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("sp_CanDien", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                      new SqlParameter("@ManufactureOrderNo", ManufactureOrderNo));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@MaterialName", MaterialName));
+                    cmd.Parameters.Add(
+                     new SqlParameter("@Weight", weight));
+                    cmd.Parameters.Add(
+                     new SqlParameter("@intime", intime));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@type", "UpdateCompTram2"));
+
+                    int effectedRow = cmd.ExecuteNonQuery();
+                    return effectedRow > 0;
+                }
+                catch (Exception ex)
+                {
+
+                    return false;
+                }
+                finally
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        conn.Close();
+                }
+            }
+        }
+        public static bool updateCompTram1(string ManufactureOrderNo, string Aunumber)
+        {
+            string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
+            //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("sp_CanDien", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                      new SqlParameter("@ManufactureOrderNo", ManufactureOrderNo));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@AuNumber", Aunumber));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@type", "UpdateCompTram1"));
+
+                    int effectedRow = cmd.ExecuteNonQuery();
+                    return effectedRow > 0;
+                }
+                catch (Exception ex)
+                {
+
+                    return false;
+                }
+                finally
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        conn.Close();
+                }
+            }
+        }
+        public static DataTable SelectCompTram2(string mo, string Aunumber)
+        {
+            string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
+            //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("sp_CanDien", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                     new SqlParameter("@ManufactureOrderNo", mo));
+                    cmd.Parameters.Add(
+                     new SqlParameter("@AuNumber", Aunumber));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@type", "SelectCompTram2"));
+                    SqlDataReader sdr = cmd.ExecuteReader();
+                    DataTable dt = new DataTable();
+                    dt.Load(sdr);
+                    return dt;
+                }
+                catch (Exception ex)
+                {
+                    return new DataTable();
+                }
+                finally
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        conn.Close();
+                }
+            }
+
+        }
+        public static DataTable SelectCompTram2Print(string mo, string Aunumber)
+        {
+            string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
+            //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("sp_CanDien", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                     new SqlParameter("@ManufactureOrderNo", mo));
+                    cmd.Parameters.Add(
+                     new SqlParameter("@AuNumber", Aunumber));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@type", "SelectCompTram2Print"));
+                    SqlDataReader sdr = cmd.ExecuteReader();
+                    DataTable dt = new DataTable();
+                    dt.Load(sdr);
+                    return dt;
+                }
+                catch (Exception ex)
+                {
+                    return new DataTable();
+                }
+                finally
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        conn.Close();
+                }
+            }
+
+        }
+        public static DataTable SelectCompTram1(string mo, string qrAu)
+        {
+            string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
+            //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("sp_CanDien", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                     new SqlParameter("@ManufactureOrderNo", mo));
+                    cmd.Parameters.Add(
+                     new SqlParameter("@QRAu", qrAu));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@type", "SelectCompTram1"));
+                    SqlDataReader sdr = cmd.ExecuteReader();
+                    DataTable dt = new DataTable();
+                    dt.Load(sdr);
+                    return dt;
+                }
+                catch (Exception ex)
+                {
+                    return new DataTable();
+                }
+                finally
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        conn.Close();
+                }
+            }
+
+        }
+        public static DataTable CheckCompTram2(string mo)
+        {
+            string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
+            //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("sp_CanDien", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                     new SqlParameter("@ManufactureOrderNo", mo));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@type", "CheckCompTram2"));
+                    SqlDataReader sdr = cmd.ExecuteReader();
+                    DataTable dt = new DataTable();
+                    dt.Load(sdr);
+                    return dt;
+                }
+                catch (Exception ex)
+                {
+                    return new DataTable();
+                }
+                finally
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        conn.Close();
+                }
+            }
+
+        }
+
         public static DataTable GetQRPrint(string mo)
         {
             string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
@@ -118,6 +427,101 @@ namespace CanHoaChat
                      new SqlParameter("@ManufactureOrderNo", mo));
                     cmd.Parameters.Add(
                       new SqlParameter("@type", "GetQRPrint"));
+                    SqlDataReader sdr = cmd.ExecuteReader();
+                    DataTable dt = new DataTable();
+                    dt.Load(sdr);
+                    return dt;
+                }
+                catch (Exception ex)
+                {
+                    return new DataTable();
+                }
+                finally
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        conn.Close();
+                }
+            }
+
+        }
+
+        public static DataTable GetTyLe(string mo)
+        {
+            string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
+            //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("sp_CanDien", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                     new SqlParameter("@ManufactureOrderNo", mo));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@type", "GetTyLe"));
+                    SqlDataReader sdr = cmd.ExecuteReader();
+                    DataTable dt = new DataTable();
+                    dt.Load(sdr);
+                    return dt;
+                }
+                catch (Exception ex)
+                {
+                    return new DataTable();
+                }
+                finally
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        conn.Close();
+                }
+            }
+
+        }
+
+        public static DataTable SelectAllBucket()
+        {
+            string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
+            //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("sp_CanDien", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                      new SqlParameter("@type", "SelectAll"));
+                    SqlDataReader sdr = cmd.ExecuteReader();
+                    DataTable dt = new DataTable();
+                    dt.Load(sdr);
+                    return dt;
+                }
+                catch (Exception ex)
+                {
+                    return new DataTable();
+                }
+                finally
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        conn.Close();
+                }
+            }
+
+        }
+
+        public static DataTable SelectRunMO()
+        {
+            string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
+            //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("sp_CanDien", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                      new SqlParameter("@type", "SelectRunMO"));
                     SqlDataReader sdr = cmd.ExecuteReader();
                     DataTable dt = new DataTable();
                     dt.Load(sdr);
@@ -261,7 +665,6 @@ namespace CanHoaChat
                         conn.Close();
                 }
             }
-
         }
         public static DataTable GetPrint(string mo)
         {
@@ -327,7 +730,7 @@ namespace CanHoaChat
             }
 
         }
-        public static DataTable GetBucketPosition(int bucketID)
+        public static DataTable GetBucketPosition(string MaterialName)
         {
             string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
             //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
@@ -339,7 +742,7 @@ namespace CanHoaChat
                     SqlCommand cmd = new SqlCommand("sp_CanDien", conn);
                     cmd.CommandType = System.Data.CommandType.StoredProcedure;
                     cmd.Parameters.Add(
-                     new SqlParameter("@BucketID", bucketID));
+                     new SqlParameter("@MaterialName", MaterialName));
                     cmd.Parameters.Add(
                       new SqlParameter("@type", "GetPosition"));
                     SqlDataReader sdr = cmd.ExecuteReader();

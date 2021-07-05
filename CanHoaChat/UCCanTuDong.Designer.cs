@@ -33,6 +33,7 @@
             this.txtQRCode = new MetroFramework.Controls.MetroTextBox();
             this.cJ2Compolet1 = new OMRON.Compolet.CIP.CJ2Compolet(this.components);
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.timer2 = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // metroLabel1
@@ -61,7 +62,7 @@
             this.txtQRCode.CustomButton.Visible = false;
             this.txtQRCode.Lines = new string[0];
             this.txtQRCode.Location = new System.Drawing.Point(614, 331);
-            this.txtQRCode.MaxLength = 3;
+            this.txtQRCode.MaxLength = 30;
             this.txtQRCode.Name = "txtQRCode";
             this.txtQRCode.PasswordChar = '\0';
             this.txtQRCode.PromptText = "QR Code";
@@ -95,6 +96,11 @@
             this.timer1.Interval = 5000;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
+            // timer2
+            // 
+            this.timer2.Interval = 1000;
+            this.timer2.Tick += new System.EventHandler(this.timer2_Tick);
+            // 
             // UCCanTuDong
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -115,5 +121,6 @@
         private MetroFramework.Controls.MetroTextBox txtQRCode;
         private OMRON.Compolet.CIP.CJ2Compolet cJ2Compolet1;
         private System.Windows.Forms.Timer timer1;
+        private System.Windows.Forms.Timer timer2;
     }
 }

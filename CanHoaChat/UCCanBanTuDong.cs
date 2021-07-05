@@ -46,6 +46,11 @@ namespace CanHoaChat
         DataTable dtChooseCTY = new DataTable();
         DataTable MaterialTemp = new DataTable();
         DataTable QRPrint = new DataTable();
+        DataTable dtPrintQT1 = new DataTable();
+        DataTable dtPrintQT2 = new DataTable();
+        DataTable dtDataPrintQT1 = new DataTable();
+        DataTable dtTyLe = new DataTable();
+        DataTable dtSortMateiral = new DataTable();
         string[,] Au;
         string[,] Total;
         string[,] Total_Temp;
@@ -53,6 +58,7 @@ namespace CanHoaChat
         int Stt_Can_Temp = 0;
         int Stt_Au_Temp = 1;
 
+        bool quytrinh1 = false;
         string QRCode = "";
         bool autrung = false;
         bool aule = false;
@@ -61,6 +67,8 @@ namespace CanHoaChat
         int timeout = 0;
         bool choqua = false;
         string printerName = "";
+        string username = "";
+        string tenhop = "";
         private void UCCanBanTuDong_Load(object sender, EventArgs e)
         {
             StreamReader sr = new StreamReader("ComCan1.txt");
@@ -71,20 +79,7 @@ namespace CanHoaChat
             printerName = sr.ReadLine().Trim();
             sr.Close();
 
-            //server = new SimpleTcpServer();
-            //server.Delimiter = 0x13;
-            //server.StringEncoder = Encoding.UTF8;
-            //server.DataReceived += Server_DataReceived;
-
-            //IPAddress ip = IPAddress.Parse("10.0.14.182");
-
-            //System.Net.IPAddress ip = new System.Net.IPAddress(long.Parse("10.0.16.107"));
-            //try
-            //{
-            //    server.Stop();
-            //    server.Start(ip, 8910);
-            //}
-            //catch { }
+            username = Error.User;
 
             this.MaximumSize = new Size(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
             this.Size = this.MaximumSize;
@@ -128,7 +123,7 @@ namespace CanHoaChat
             }
             catch (Exception ex)
             {
- 
+
                 timer1.Enabled = false;
                 msg m = new msg("Không kết nối được PLC");
                 m.Show();
@@ -136,9 +131,6 @@ namespace CanHoaChat
         }
         public void COMOpen()
         {
-            if (comport.IsOpen == true)
-                comport.Close();
-
             try
             {
                 string strCOMname = ComName;
@@ -177,7 +169,7 @@ namespace CanHoaChat
             if (comport.IsOpen == true)
             {
                 comport.Close();
-            }    
+            }
         }
 
         //Ham nhan du lieu tu cong COM
@@ -192,7 +184,7 @@ namespace CanHoaChat
                 timeout = 0;
                 //Lấy dữ liệu từ cổng COM chuyển sang string
                 strData = comport.ReadExisting().ToString();
-                if(strData.Length >= 17)
+                if (strData.Length >= 17)
                 {
                     strData2 = strData.Substring(strData.Length - 17, 10);
                     //strData2 = strData.Substring(7, strData.Length - 7);
@@ -255,8 +247,8 @@ namespace CanHoaChat
                 timeout = 0;
                 strData = comport.ReadExisting().ToString();
                 if (strData != "")
-                    strData2 = strData.Substring(strData.Length - 17,10);
-                    //strData2 = strData.Substring(7, strData.Length - 7);
+                    strData2 = strData.Substring(strData.Length - 17, 10);
+                //strData2 = strData.Substring(7, strData.Length - 7);
                 else
                     strData2 = "0";
                 dResult = Convert.ToDouble(strData2);
@@ -276,90 +268,11 @@ namespace CanHoaChat
         Color[] Mau = { Color.DodgerBlue, Color.DodgerBlue, Color.LightSkyBlue, Color.LightSkyBlue, Color.White, Color.White };
         int iDem = 0;
 
-
-        private void btRun_Click(object sender, EventArgs e)
-        {
-            if (a.IsAlive)
-            {
-                a.Abort();
-            }
-
-            //COMOpen();
-
-            Au = null;
-            Total = null;
-            soau = 1;
-            Total_Temp = null;
-            Stt_Temp = 0;
-            Stt_Can_Temp = 0;
-            Stt_Au_Temp = 1;
-            QRCode = "";
-            autrung = false;
-            aule = false;
-            inlai = false;
-
-
-            lbMaKeo.Visible = true;
-            lbSoMe.Visible = true;
-            panelAu.Visible = true; //Hiện panel Âu để cân âu
-
-
-            //Lấy thông tin của lệnh vừa được chọn
-            dtBuckets = SQL_Conn.SelectBuckets(txtQRCode.Text.ToString());
-            dtChoose = SQL_Conn.SelectMO(txtQRCode.Text.ToString());
-            dtChooseCTY = SQL_Conn.SelectCommandCTY(txtQRCode.Text.ToString(),1);
-            MaterialTemp = SQL_Conn.SelectCommandTemp(txtQRCode.Text.ToString(),1);
-            Au = new string[int.Parse(dtChoose.Rows[0][3].ToString()), 2]; //Khai báo số Âu theo lệnh điều động
-            Total = new string[int.Parse(dtChoose.Rows[0][3].ToString()), 2]; //Khai báo tổng số lượng của từng âu
-
-
-            //Gán dữ liệu để quét tiếp nếu bị lỗi cân khi đang quét
-            for (int i = 0; i < MaterialTemp.Rows.Count; i++)
-            {
-                Au[i, 0] = MaterialTemp.Rows[i][1].ToString();
-                Au[i, 1] = MaterialTemp.Rows[i][4].ToString();
-                Total[i, 0] = MaterialTemp.Rows[i][1].ToString();               
-                Total[i, 1] = MaterialTemp.Rows[i][5].ToString();
-
-                int ChemicalStt = int.Parse(MaterialTemp.Rows[i][3].ToString());
-                int AuNumber = int.Parse(MaterialTemp.Rows[i][2].ToString());
-                string QRAu = MaterialTemp.Rows[i][1].ToString();
-                if (AuNumber >= Stt_Au_Temp && QRAu != "")
-                {
-                    Stt_Au_Temp = AuNumber + 1;
-                }
-
-                if (ChemicalStt >= Stt_Temp && ChemicalStt > 0)
-                {
-                    Stt_Temp = ChemicalStt;
-                    if (AuNumber == int.Parse(dtChoose.Rows[0][3].ToString()))
-                    {
-                        Stt_Temp += 1;
-                        Stt_Can_Temp = 0;
-                    }
-                    else
-                        Stt_Can_Temp = AuNumber;
-                }
-            }
-
-            //Gán thông tin keo mà tổng số âu
-            lbMaKeo.Text = "Mã keo: " + dtChoose.Rows[0][2].ToString();
-            lbSoMe.Text = "Tổng số hộp: " + dtChoose.Rows[0][3].ToString();
-
-            //Mở timer 2 kiểm tra Âu
-            timer2.Enabled = true;
-
-            //Chạy thread để lấy dữ liệu từ cân
-            a = new Thread(checkQRAu);
-            a.IsBackground = true;
-            a.Start();
-        }
-
         string[] open = new string[2]; //Mo thung
         string[] light = new string[2]; //Mo den
         string result = "";
         public void getMaterial()
-        {          
+        {
             int j = 5;
             int l = 0; //Thu tu plc
             soau = Stt_Can_Temp + 1;
@@ -382,8 +295,6 @@ namespace CanHoaChat
 
             for (int i = 0; i < dtChooseCTY.Rows.Count; i++)
             {
-
-
                 for (int k = 0; k < dtBuckets.Rows.Count; k++)
                 {
                     try
@@ -403,8 +314,8 @@ namespace CanHoaChat
                         //Set den, mo thung plc    
                         try
                         {
-                            var row = dtBuckets.Select("MaterialCode = '" + dtChooseCTY.Rows[i][j].ToString().Trim()  + "'");
-                            foreach(var item in row)
+                            var row = dtBuckets.Select("MaterialName = '" + dtChooseCTY.Rows[i][j].ToString().Trim() + "'");
+                            foreach (var item in row)
                             {
                                 open = item[2].ToString().Split('.');
                                 light = item[3].ToString().Split('.');
@@ -448,7 +359,7 @@ namespace CanHoaChat
 
                         txtKGR.WaterMark = dtChooseCTY.Rows[soau - 1][j + 1].ToString(); //set số lượng cần
                         //Cân đủ số âu thì chuyển sang chất khác
-                        while (choqua == false && soau <= int.Parse(dtChoose.Rows[i][3].ToString()))
+                        while (choqua == false && soau <= int.Parse(dtChoose.Rows[i]["BatchNo"].ToString()))
                         {
                             //Set label tên nguyên liệu                                                                  
                             if (this.InvokeRequired)
@@ -459,12 +370,14 @@ namespace CanHoaChat
                             }
 
                             //Set label số thứ tự hộp
-                            if (this.InvokeRequired)
-                            {
-                                SetTextCallback d = new SetTextCallback(SetLabelStt);
-                                this.Invoke
-                                    (d, new object[] { soau.ToString() });
-                            }                        
+                            if (!quytrinh1)
+                                if (this.InvokeRequired)
+                                {
+                                    SetTextCallback d = new SetTextCallback(SetLabelStt);
+                                    this.Invoke
+                                        (d, new object[] { soau.ToString() });
+                                }
+
                             for (int u = 0; ; u++)
                             {
                                 if (choqua == true && result == "OK")
@@ -473,7 +386,7 @@ namespace CanHoaChat
                                 {
                                     result = COMgetData(dtChooseCTY.Rows[soau - 1][j + 1].ToString());
                                     Thread.Sleep(30);
-                                }                               
+                                }
                             }
 
                             ////An nut xac nhan
@@ -486,7 +399,10 @@ namespace CanHoaChat
 
                             if (result == "OK" && choqua)
                             {
-                                Total[soau - 1, 1] = (Double.Parse(Total[soau - 1, 1]) + ActualKG).ToString();
+                                if (!quytrinh1)
+                                    Total[soau - 1, 1] = (Double.Parse(Total[soau - 1, 1]) + ActualKG).ToString();
+                                else
+                                    Total[soau - 1, 1] = 0.ToString();
                                 //Update bảng lưu tạm
                                 if (this.InvokeRequired)
                                 {
@@ -513,11 +429,10 @@ namespace CanHoaChat
                                     this.Invoke
                                         (d, new object[] { (soau - 1).ToString() });
                                 }
-
                                 soau++;
 
                                 //Cân đủ khối lượng chuyển sang chất kế tiếp   
-                                if (soau > int.Parse(dtChoose.Rows[i][3].ToString()))
+                                if (soau > int.Parse(dtChoose.Rows[i]["BatchNo"].ToString()))
                                 {
                                     dongthung = false;
                                     //Disable dong thung button
@@ -536,7 +451,7 @@ namespace CanHoaChat
                                     {
                                         if (dongthung == true)
                                             break;
-                                       
+
                                     }
                                 }
                                 else
@@ -555,17 +470,54 @@ namespace CanHoaChat
                             }
                             else
                             {
-                                choqua = false;                            
-                            }       
+                                choqua = false;
+                            }
                         }
+                       
+                        if (quytrinh1)
+                        {
+                            string tenthung = "";
+                            DataRow[] r = dtSortMateiral.Select("MaterialName = '" + dtChooseCTY.Rows[i][j].ToString() + "'");
+                            foreach (var item in r)
+                                tenthung = item["AuNumber"].ToString();
+                            dtPrintQT1 = SQL_Conn.CheckPrintQT1(dtChoose.Rows[0]["ManufactureOrderNo"].ToString(), dtChoose.Rows[0]["SoThe"].ToString(), tenthung);
+                            if (dtPrintQT1.Rows.Count > 0)
+                            {
+                                PrintDocument printDocument = new PrintDocument(); //add the document to the dialog box..
+                                printDocument.DefaultPageSettings.PaperSize.RawKind = 119;
+                                printDocument.PrinterSettings.DefaultPageSettings.PaperSize.RawKind = 119;
+                                printDocument.DefaultPageSettings.Landscape = false;
+                                printDocument.PrinterSettings.PrinterName = printerName;
+                                makeo = dtChoose.Rows[0]["ChemicalOrderCode"].ToString() + dtChoose.Rows[0]["ChemicalOrderCode2"].ToString();
+                                thoigianin = DateTime.Now.ToString("HH:mm:ss");
+                                ngayin = DateTime.Now.ToString("dd-MM-yyyy");
+                                soauhientai = int.Parse(tenthung);
+                                r = dtSortMateiral.Select("AuNumber = MAX(AuNumber)");
+                                foreach (var item in r)
+                                    tongau = int.Parse(item["AuNumber"].ToString());
+
+                                if (double.Parse(dtChoose.Rows[0]["Weight"].ToString()) >= 25)
+                                    makeokg = 25.ToString();
+                                else
+                                {
+                                    makeokg = dtChoose.Rows[0]["Weight"].ToString();
+                                }
+
+                                printDocument.PrintPage += new System.Drawing.Printing.PrintPageEventHandler(CreateReceipt_quytrinh1); //add an event handler that will do the printing
+                                                                                                                                       //on a till you will not want to ask the user where to print but this is fine for the test envoironment.
+                                printDocument.Print();
+                            }
+                        }
+                       
                         choqua = false;
                         soau = 1; //Reset âu để cân hóa chất tiếp theo
-                        if (this.InvokeRequired)
-                        {
-                            SetTextCallback d = new SetTextCallback(SetLabelStt);
-                            this.Invoke
-                                (d, new object[] { soau.ToString() });
-                        }
+                        if (!quytrinh1)
+                            if (this.InvokeRequired)
+                            {
+                                SetTextCallback d = new SetTextCallback(SetLabelStt);
+                                this.Invoke
+                                    (d, new object[] { soau.ToString() });
+                            }
 
                         Thread.Sleep(3000);
                         //Close plc
@@ -579,14 +531,14 @@ namespace CanHoaChat
 
                         }
                     }
-                               
+
                     j++;
                     l++;
                     result = "";
                 }
             }
             for (int i = 0; i < dtBuckets.Rows.Count; i++)
-            {               
+            {
                 try
                 {
                     open = dtBuckets.Rows[i][2].ToString().Split('.');
@@ -597,7 +549,7 @@ namespace CanHoaChat
                 catch { }
             }
 
-            bool b = SQL_Conn.updateMachine(dtChooseCTY.Rows[0][0].ToString(),1); //Cập nhật hoàn thành lệnh
+            bool b = SQL_Conn.updateMachine(dtChooseCTY.Rows[0][0].ToString(), 1); //Cập nhật hoàn thành lệnh
 
             //Kiểm tra cân trạm 2
             if (this.InvokeRequired)
@@ -630,6 +582,13 @@ namespace CanHoaChat
         }
         private void SetLabelNL(string text)
         {
+            if (quytrinh1)
+            {
+                DataRow[] r = dtSortMateiral.Select("MaterialName = '" + text + "'");
+                foreach (var item in r)
+                    this.lbStt.Text = "Thùng " + item["AuNumber"].ToString();
+            }
+
             this.lbNguyenLieu.Text = "Hóa chất " + text;
         }
         private void SetBtXacNhan(string text)
@@ -666,11 +625,11 @@ namespace CanHoaChat
             if (text == "1") //Update tạm bì hộp
                 SQL_Conn.updateAuTemp(txtQRCode.Text.ToString(), txtCanAu.WaterMark, txtQRAu.Text, stt.ToString(), 1);
             if (text == "2") //Update tạm số hộp
-                SQL_Conn.updateAuTotalTemp(txtQRCode.Text, Total[soau - 1, 1], soau.ToString(),1);
+                SQL_Conn.updateAuTotalTemp(txtQRCode.Text, Total[soau - 1, 1], soau.ToString(), 1);
             if (text == "3") //Update tạp số thứ tự hóa chất
-                SQL_Conn.updateSttTemp(txtQRCode.Text, soau.ToString(),1);
+                SQL_Conn.updateSttTemp(txtQRCode.Text, soau.ToString(), 1);
             if (text == "4") //Update chi tiết hóa chất
-                SQL_Conn.updateTempDetail(txtQRCode.Text, Total[soau - 1, 0], lbNguyenLieu.Text.Substring(8, lbNguyenLieu.Text.Length - 8).Trim(), ActualKG, 1, Error.User);
+                SQL_Conn.updateTempDetail(txtQRCode.Text, Total[soau - 1, 0], lbNguyenLieu.Text.Substring(8, lbNguyenLieu.Text.Length - 8).Trim(), ActualKG, 1, username);
         }
         private void SetNL(string text)
         {
@@ -688,6 +647,11 @@ namespace CanHoaChat
             dgCty2.Rows.Clear();
             dgCty3.Rows.Clear();
             dgCty4.Rows.Clear();
+            dgCty.Refresh();
+            dgCty2.Refresh();
+            dgCty3.Refresh();
+            dgCty4.Refresh();
+
             //Kiểm tra hóa chất
             string m1 = dtChooseCTY.Rows[0]["Material01"].ToString();
             string m2 = dtChooseCTY.Rows[0]["Material02"].ToString();
@@ -772,106 +736,125 @@ namespace CanHoaChat
             stt = Stt_Au_Temp;
             soau = Stt_Au_Temp;
 
+
             //Quét QR âu và cân bì âu
-            while (stt <= int.Parse(dtChoose.Rows[0][3].ToString()))
-            {
-                //Đúng chuẩn mã QR Âu
-                if (txtQRAu.Text.Length >= 4)
+            if (!quytrinh1)
+                while (stt <= int.Parse(dtChoose.Rows[0]["BatchNo"].ToString()))
                 {
-                    //Kiểm tra âu lẻ khác 25kg có kí tự cuối là A
-                    if (dtChooseCTY.Rows[stt - 1][3].ToString() == "25.000" && txtQRAu.Text.Substring(1, 1) == "U" ||
-                        (dtChooseCTY.Rows[stt - 1][3].ToString() != "25.000" && txtQRAu.Text.Substring(1, 1) == "A"))
+                    timeout = 0;
+                    //Đúng chuẩn mã QR Âu
+                    if (txtQRAu.Text.Length >= 4)
                     {
-                        //Kiểm tra quét trùng Âu
-                        for (int i = 0; i < int.Parse(dtChoose.Rows[0][3].ToString()); i++)
+                        //Kiểm tra âu lẻ khác 25kg có kí tự cuối là A
+                        if (dtChooseCTY.Rows[stt - 1][3].ToString() == "25.000" && txtQRAu.Text.Substring(1, 1) == "U" ||
+                            (dtChooseCTY.Rows[stt - 1][3].ToString() != "25.000" && txtQRAu.Text.Substring(1, 1) == "A"))
                         {
-                            //Nếu trùng
-                            if (Au[i, 0] == txtQRAu.Text)
+                            //Kiểm tra quét trùng Âu
+                            for (int i = 0; i < int.Parse(dtChoose.Rows[0]["BatchNo"].ToString()); i++)
                             {
-                                if (this.txtQRAu.InvokeRequired)
+                                //Nếu trùng
+                                if (Au[i, 0] == txtQRAu.Text)
                                 {
-                                    //Set textbox QR âu bằng "" nếu dùng thread;
-                                    SetTextCallback d = new SetTextCallback(SetText);
-                                    this.Invoke
-                                        (d, new object[] { "" });
-                                    autrung = true;
+                                    if (this.txtQRAu.InvokeRequired)
+                                    {
+                                        //Set textbox QR âu bằng "" nếu dùng thread;
+                                        SetTextCallback d = new SetTextCallback(SetText);
+                                        this.Invoke
+                                            (d, new object[] { "" });
+                                        autrung = true;
+                                    }
+                                    else
+                                    {
+                                        //Set textbox QR âu bằng "" nếu dùng bình thường;
+                                        this.txtQRAu.Text = "";
+                                        autrung = true;
+                                    }
+                                    //Set biến QR Au bằng rỗng 
+                                    QRAu = "";
                                 }
                                 else
-                                {
-                                    //Set textbox QR âu bằng "" nếu dùng bình thường;
-                                    this.txtQRAu.Text = "";
-                                    autrung = true;
-                                }
-                                //Set biến QR Au bằng rỗng 
-                                QRAu = "";
-                            }
-                            else
-                                QRAu = txtQRAu.Text; //Không trùng thì gán biến = QR đang quét
-                        }
-
-                        //QR Au không rỗng thì cân số bì của âu
-                        if (QRAu != "")
-                        {
-                            if (this.InvokeRequired)
-                            {
-
-                                SetTimerCheckAu d = new SetTimerCheckAu(SetTimer);
-                                this.Invoke
-                                    (d, new object[] { "" });
+                                    QRAu = txtQRAu.Text; //Không trùng thì gán biến = QR đang quét
                             }
 
-                            while (timer3.Enabled)
+                            //QR Au không rỗng thì cân số bì của âu
+                            if (QRAu != "")
                             {
-                                result = COMgetAu();
-                                Thread.Sleep(70); //Dừng 0.2s
-                            }
-
-                            //Đủ 10s
-                            if (timer3.Enabled == false)
-                            {
-                                Au[stt - 1, 0] = txtQRAu.Text; //Gán QR vào mảng Au
-                                Au[stt - 1, 1] = txtCanAu.WaterMark; //Gán khối lượng bì của âu
-                                Total[stt - 1, 0] = txtQRAu.Text; //Gán QR vào mảng Total
-                                Total[stt - 1, 1] = "0"; //Set khối lượng bằng 0
-
                                 if (this.InvokeRequired)
                                 {
-                                    SetTimerCheckAu d = new SetTimerCheckAu(UpdateTemp);
-                                    this.Invoke
-                                        (d, new object[] { "1" });
-                                }
 
-                                stt++;
-                                if (this.txtQRAu.InvokeRequired)
-                                {
-                                    //Set TextBox Qr Au về "" dùng trong thread
-                                    SetTextCallback d = new SetTextCallback(SetText);
+                                    SetTimerCheckAu d = new SetTimerCheckAu(SetTimer);
                                     this.Invoke
                                         (d, new object[] { "" });
                                 }
-                                else
+
+                                while (timer3.Enabled)
                                 {
-                                    //Set TextBox Qr Au về "" dùng bình thường
-                                    this.txtQRAu.Text = "";
+                                    result = COMgetAu();
+                                    Thread.Sleep(70); //Dừng 0.2s
                                 }
-                                txtCanAu.WaterMark = "0"; //Set Khối lượng Âu về 0 dùng WaterMart trong textbox
-                                soau++; //Tăng số âu tiếp theo
+
+                                //Đủ 10s
+                                if (timer3.Enabled == false)
+                                {
+                                    Au[stt - 1, 0] = txtQRAu.Text; //Gán QR vào mảng Au
+                                    Au[stt - 1, 1] = txtCanAu.WaterMark; //Gán khối lượng bì của âu
+                                    Total[stt - 1, 0] = txtQRAu.Text; //Gán QR vào mảng Total
+                                    Total[stt - 1, 1] = "0"; //Set khối lượng bằng 0
+
+                                    if (this.InvokeRequired)
+                                    {
+                                        SetTimerCheckAu d = new SetTimerCheckAu(UpdateTemp);
+                                        this.Invoke
+                                            (d, new object[] { "1" });
+                                    }
+
+                                    stt++;
+                                    if (this.txtQRAu.InvokeRequired)
+                                    {
+                                        //Set TextBox Qr Au về "" dùng trong thread
+                                        SetTextCallback d = new SetTextCallback(SetText);
+                                        this.Invoke
+                                            (d, new object[] { "" });
+                                    }
+                                    else
+                                    {
+                                        //Set TextBox Qr Au về "" dùng bình thường
+                                        this.txtQRAu.Text = "";
+                                    }
+                                    txtCanAu.WaterMark = "0"; //Set Khối lượng Âu về 0 dùng WaterMart trong textbox
+                                    soau++; //Tăng số âu tiếp theo
+                                }
                             }
                         }
-                    }
-                    else
-                    {
-                        if (this.txtQRAu.InvokeRequired)
+                        else
                         {
-                            //Set textbox QR âu bằng "" nếu dùng thread;
-                            SetTextCallback d = new SetTextCallback(SetText);
-                            this.Invoke
-                                (d, new object[] { "" });
-                            aule = true;
+                            if (this.txtQRAu.InvokeRequired)
+                            {
+                                //Set textbox QR âu bằng "" nếu dùng thread;
+                                SetTextCallback d = new SetTextCallback(SetText);
+                                this.Invoke
+                                    (d, new object[] { "" });
+                                aule = true;
+                            }
                         }
                     }
                 }
-            }
+            else
+                while (stt <= int.Parse(dtChoose.Rows[0]["BatchNo"].ToString()))
+                {
+                    Au[stt - 1, 0] = stt.ToString(); //Gán QR vào mảng Au
+                    Au[stt - 1, 1] = "0"; //Gán khối lượng bì của âu
+                    Total[stt - 1, 0] = stt.ToString(); //Gán QR vào mảng Total
+                    Total[stt - 1, 1] = "0"; //Set khối lượng bằng 0
+
+                    if (this.InvokeRequired)
+                    {
+                        SetTimerCheckAu d = new SetTimerCheckAu(UpdateTemp);
+                        this.Invoke
+                            (d, new object[] { "1" });
+                    }
+                    stt++;
+                }
             checkAu = true; //Kiểm tra âu thành công
         }
 
@@ -883,6 +866,7 @@ namespace CanHoaChat
         string thoigianin;
         string ngayin;
         string makeo;
+        string makeo2;
         string makeokg;
         private void timer1_Tick(object sender, EventArgs e)
         {
@@ -892,35 +876,40 @@ namespace CanHoaChat
                 {
                     showmsg = false;
 
-                    DataTable dtPrint = SQL_Conn.GetPrint(dtChoose.Rows[0][0].ToString());
-
-                    PrintDocument printDocument = new PrintDocument(); //add the document to the dialog box..
-                    printDocument.DefaultPageSettings.PaperSize.RawKind = 119;
-                    printDocument.PrinterSettings.DefaultPageSettings.PaperSize.RawKind = 119;
-                    printDocument.DefaultPageSettings.Landscape = false;
-                    printDocument.PrinterSettings.PrinterName = printerName;
-                    makeo = lbMaKeo.Text;
-                    for (int i = 0; i < dtPrint.Rows.Count; i++)
+                    if(!quytrinh1)
                     {
-                        thoigianin = DateTime.Now.ToString("HH:mm:ss");
-                        ngayin = DateTime.Now.ToString("dd-MM-yyyy");
-                        soauhientai = i + 1;
-                        tongau = dtPrint.Rows.Count;
-                        maau = dtPrint.Rows[i][1].ToString();
-                        if (maau.Substring(0, 2) == "AU")
-                            makeokg = 25.ToString();
-                        else
+                        DataTable dtPrint = SQL_Conn.GetPrint(dtChoose.Rows[0][0].ToString());
+                        dtTyLe = SQL_Conn.GetTyLe(dtChoose.Rows[0][0].ToString());
+
+                        PrintDocument printDocument = new PrintDocument(); //add the document to the dialog box..
+                        printDocument.DefaultPageSettings.PaperSize.RawKind = 119;
+                        printDocument.PrinterSettings.DefaultPageSettings.PaperSize.RawKind = 119;
+                        printDocument.DefaultPageSettings.Landscape = false;
+                        printDocument.PrinterSettings.PrinterName = printerName;
+                        makeo = dtChoose.Rows[0]["ChemicalOrderCode"].ToString() + dtChoose.Rows[0]["ChemicalOrderCode2"].ToString();
+                        for (int i = 0; i < dtPrint.Rows.Count; i++)
                         {
-                            if (double.Parse(dtChoose.Rows[0][4].ToString()) > 25)
-                                makeokg = (double.Parse(dtChoose.Rows[0][4].ToString()) - ((int.Parse(CheckPrint.Rows[0][4].ToString()) / 25) * 25)).ToString();
+                            thoigianin = DateTime.Now.ToString("HH:mm:ss");
+                            ngayin = DateTime.Now.ToString("dd-MM-yyyy");
+                            soauhientai = i + 1;
+                            tongau = dtPrint.Rows.Count;
+                            maau = dtPrint.Rows[i][2].ToString();
+                            dtPrintQT2 = SQL_Conn.SelectCompTram1(dtChoose.Rows[0]["ManufactureOrderNo"].ToString(), maau);
+                            tenhop = dtPrint.Rows[i][1].ToString();
+                            if (maau.Substring(0, 2) == "AU")
+                                makeokg = 25.ToString();
                             else
-                                makeokg = (double.Parse(dtChoose.Rows[0][4].ToString())).ToString();
-                        }                            
-                        khoiluong = dtPrint.Rows[i][2].ToString();
-                        printDocument.PrintPage += new System.Drawing.Printing.PrintPageEventHandler(CreateReceipt); //add an event handler that will do the printing
-                        //on a till you will not want to ask the user where to print but this is fine for the test envoironment.
-                        printDocument.Print();
+                            {
+                                makeokg = (double.Parse(dtChoose.Rows[0]["Weight"].ToString()) - ((tongau - 1) * 25)).ToString();
+                            }
+                            khoiluong = dtPrint.Rows[i][3].ToString();
+                            printDocument.PrintPage += new System.Drawing.Printing.PrintPageEventHandler(CreateReceipt); //add an event handler that will do the printing
+                                                                                                                         //on a till you will not want to ask the user where to print but this is fine for the test envoironment.
+                            printDocument.Print();
+                            Thread.Sleep(1000);
+                        }
                     }
+                   
 
                     //Show msgbox
                     mo = "";
@@ -932,6 +921,7 @@ namespace CanHoaChat
                     Stt_Can_Temp = 0;
                     Stt_Au_Temp = 1;
                     QRCode = "";
+                    quytrinh1 = false;
                     autrung = false;
                     aule = false;
                     inlai = false;
@@ -939,7 +929,32 @@ namespace CanHoaChat
                     choqua = false;
                     stoptime = false;
                     btXacNhan.Visible = false;
+                    lbSoKG.Visible = false;
                     show = 0;
+                    for (int k = 0; k < dgCty.Columns.Count; k++)
+                    {
+                        dgCty.Columns[k].Visible = true;
+                    }
+
+                    for (int k = 0; k < dgCty2.Columns.Count; k++)
+                    {
+                        dgCty2.Columns[k].Visible = true;
+                    }
+
+                    for (int k = 0; k < dgCty3.Columns.Count; k++)
+                    {
+                        dgCty3.Columns[k].Visible = true;
+                    }
+
+                    for (int k = 0; k < dgCty4.Columns.Count; k++)
+                    {
+                        dgCty4.Columns[k].Visible = true;
+                    }
+                    dgCty.DataSource = null;
+                    dgCty2.DataSource = null;
+                    dgCty3.DataSource = null;
+                    dgCty4.DataSource = null;
+
                     COMClose();
                     PLCClose();
 
@@ -956,9 +971,54 @@ namespace CanHoaChat
                     timer1.Enabled = false;
                 }
                 else
-                {                    
+                {                   
+                    if (quytrinh1 && timer6.Enabled == false)
+                    {
+                        var dtPrintT2 = SQL_Conn.CheckCompTram2(dtChoose.Rows[0]["ManufactureOrderNo"].ToString().Trim());
+
+                        if (dtPrintT2.Rows.Count > 0)
+                        {
+                            string tenthung = "";
+                            DataRow[] r = dtSortMateiral.Select("MaterialName = '" + dtPrintT2.Rows[0]["MaterialCode"].ToString() + "'");
+                            foreach (var item in r)
+                                tenthung = item["AuNumber"].ToString();
+
+                            if (dtPrintT2.Rows[0]["MaterialCode"].ToString() == "VM56" || dtPrintT2.Rows[0]["MaterialCode"].ToString() == "AS-150")
+                            {
+                                var countMaterialT2 = SQL_Conn.CountMaterialT2(dtChoose.Rows[0]["ManufactureOrderNo"].ToString(), dtPrintT2.Rows[0]["MaterialCode"].ToString());
+                                countLast_hoachat = countMaterialT2.Rows.Count - 1;
+                                if (countMaterialT2.Rows.Count > 0)
+                                    last_hoachat = countMaterialT2.Rows[0]["MaterialCode"].ToString();
+                            }
+                            dtDataPrintQT1 = SQL_Conn.SelectCompTram2(dtChoose.Rows[0]["ManufactureOrderNo"].ToString().Trim(), tenthung);
+
+                            PrintDocument printDocument = new PrintDocument(); //add the document to the dialog box..
+                            printDocument.DefaultPageSettings.PaperSize.RawKind = 119;
+                            printDocument.PrinterSettings.DefaultPageSettings.PaperSize.RawKind = 119;
+                            printDocument.DefaultPageSettings.Landscape = false;
+                            printDocument.PrinterSettings.PrinterName = printerName;
+                            makeo = dtChoose.Rows[0]["ChemicalOrderCode"].ToString() + dtChoose.Rows[0]["ChemicalOrderCode2"].ToString();
+                            thoigianin = DateTime.Now.ToString("HH:mm:ss");
+                            ngayin = DateTime.Now.ToString("dd-MM-yyyy");
+                            soauhientai = int.Parse(tenthung);
+                            r = dtSortMateiral.Select("AuNumber = MAX(AuNumber)");
+                            foreach (var item in r)
+                                tongau = int.Parse(item["AuNumber"].ToString());
+
+                            if (double.Parse(dtChoose.Rows[0]["Weight"].ToString()) >= 25)
+                                makeokg = 25.ToString();
+                            else
+                            {
+                                makeokg = dtChoose.Rows[0]["Weight"].ToString();
+                            }
+
+                            printDocument.PrintPage += new System.Drawing.Printing.PrintPageEventHandler(CreateReceipt_quytrinh1_T2); //add an event handler that will do the printing
+                                                                                                                                      //on a till you will not want to ask the user where to print but this is fine for the test envoironment.
+                            printDocument.Print();
+                        }
+                    }
                     //Chỉnh màu cho ô khối lượng
-                    if(result != "OK") // Nếu chưa đúng trọng lượng
+                    if (result != "OK") // Nếu chưa đúng trọng lượng
                     {
                         txtKG.BackColor = Mau[iDem];
                         iDem++;
@@ -972,7 +1032,63 @@ namespace CanHoaChat
             }
             catch
             {
-                
+                mo = "";
+                Au = null;
+                Total = null;
+                soau = 1;
+                Total_Temp = null;
+                Stt_Temp = 0;
+                Stt_Can_Temp = 0;
+                Stt_Au_Temp = 1;
+                QRCode = "";
+                quytrinh1 = false;
+                autrung = false;
+                aule = false;
+                inlai = false;
+                checkAu = false;
+                choqua = false;
+                stoptime = false;
+                btXacNhan.Visible = false;
+                lbSoKG.Visible = false;
+                show = 0;
+                for (int k = 0; k < dgCty.Columns.Count; k++)
+                {
+                    dgCty.Columns[k].Visible = true;
+                }
+
+                for (int k = 0; k < dgCty2.Columns.Count; k++)
+                {
+                    dgCty2.Columns[k].Visible = true;
+                }
+
+                for (int k = 0; k < dgCty3.Columns.Count; k++)
+                {
+                    dgCty3.Columns[k].Visible = true;
+                }
+
+                for (int k = 0; k < dgCty4.Columns.Count; k++)
+                {
+                    dgCty4.Columns[k].Visible = true;
+                }
+                dgCty.DataSource = null;
+                dgCty2.DataSource = null;
+                dgCty3.DataSource = null;
+                dgCty4.DataSource = null;
+
+                COMClose();
+                PLCClose();
+
+                a.Abort();
+                msg m = new msg("In tem lỗi.");
+                UCCanBanTuDong_Load(this, null);
+                m.TopMost = true;
+                m.Show();
+
+                txtQRCode.Text = "";
+                txtQRCode.Focus();
+                txtQRCode.SelectAll();
+                //Tắt timer
+                timer1.Enabled = false;
             }
         }
 
@@ -1037,20 +1153,33 @@ namespace CanHoaChat
 
             graphic.DrawString(" ESSONS GLOBAL", new Font("Segoe UI", 18, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY);
             offset = offset + 20;
-            string top = makeo;
+            string top = dtChoose.Rows[0]["ChemicalOrderCode"].ToString() + "_" + dtTyLe.Rows[0]["TyLeMK1"].ToString() + "%";
             graphic.DrawString(top, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 20;
+            if (dtChoose.Rows[0]["ChemicalOrderCode2"].ToString() != "")
+            {
+                string top2 = dtChoose.Rows[0]["ChemicalOrderCode2"].ToString() + "_" + dtTyLe.Rows[0]["TyLeMK2"].ToString() + "%";
+                graphic.DrawString(top2, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+                offset = offset + 20;
+            }
             graphic.DrawString(makeokg + "kg", new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            for(int i = 0; i < dtPrintQT2.Rows.Count; i++)
+            {
+                string tenchat = dtPrintQT2.Rows[i]["MaterialCode"].ToString();
+                string khoiluong = dtPrintQT2.Rows[i]["Weight"].ToString();
+                offset = offset + 20;
+                graphic.DrawString(tenchat + " - " + khoiluong + "g", new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);              
+            }
             offset = offset + (int)fontHeight; //make the spacing consistent
             graphic.DrawString("----------------------------------", font, new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 20; //make some room so that the total stands out.
             graphic.DrawString("Số hộp: " + soauhientai + "/" + tongau, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
-            if (maau.Substring(0, 2) == "AA")
+            if (makeokg != 25.ToString())
                 graphic.DrawString("LẺ", new Font("Segoe UI", 30, FontStyle.Bold), new SolidBrush(Color.Black), startX + 150, startY + offset);
             offset = offset + 30;
-            graphic.DrawString("Mã hộp: " + maau, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            graphic.DrawString("Tên hộp: " + tenhop, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 30; //make some room so that the total stands out.
-            if(inlai == false)
+            if (inlai == false)
                 graphic.DrawString("Mã lệnh: " + txtQRCode.Text, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             else
                 graphic.DrawString("Mã lệnh: " + txtQRCode.Text, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
@@ -1059,18 +1188,200 @@ namespace CanHoaChat
             offset = offset + 30; //make some room so that the total stands out.
             graphic.DrawString("Giờ cân: " + thoigianin, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset); ;
             offset = offset + 30; //make some room so that the total stands out.
-            graphic.DrawString("Ngày cân: " + ngayin , new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            graphic.DrawString("Ngày cân: " + ngayin, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 30; //make some room so that the total stands out.
             graphic.DrawString("----------------------------------", font, new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 30;
             QRCodeGenerator _qrCode = new QRCodeGenerator();
-            string qrcode = "";
-            qrcode = dtChoose.Rows[0][2].ToString() + "," + DateTime.Now.ToString("yyyyMMdd") + DateTime.Now.ToString("HHmmss");
+            string qrcode = ""; 
+            if (dtChoose.Rows[0]["ChemicalOrderCode2"].ToString() == null || dtChoose.Rows[0]["ChemicalOrderCode2"].ToString() == "")
+                qrcode = dtChoose.Rows[0]["ChemicalOrderCode"].ToString() + "," + DateTime.Now.ToString("yyyyMMdd") + DateTime.Now.ToString("HHmmss");
+            else
+                qrcode = dtChoose.Rows[0]["ChemicalOrderCode"].ToString() + dtChoose.Rows[0]["ChemicalOrderCode2"].ToString() + "," + DateTime.Now.ToString("yyyyMMdd") + DateTime.Now.ToString("HHmmss");
             QRCodeData _qrCodeData = _qrCode.CreateQrCode(qrcode, QRCodeGenerator.ECCLevel.Q);
             QRCode qrCode = new QRCode(_qrCodeData);
             Bitmap qrCodeImage = qrCode.GetGraphic(20);
             graphic.DrawImage(qrCodeImage, startX + 60, startY + offset, 100, 100);
             bool b = SQL_Conn.updateQRCode(txtQRCode.Text.ToString(), soauhientai, qrcode, ngayin, thoigianin, khoiluong, 1); //Cập nhật QR code
+        }
+
+        string last_hoachat = "";
+        int countLast_hoachat = 0;
+        string tenhoachatT2 = "";
+        string sokgT2 = "";
+        string intimeCan = "";
+        public void CreateReceipt_quytrinh1_T2(object sender, System.Drawing.Printing.PrintPageEventArgs e)
+        {
+            //this prints the reciept
+            Graphics graphic = e.Graphics;
+            Font font = new Font("Segoe UI", 12); //must use a mono spaced font as the spaces need to line up
+
+            float fontHeight = font.GetHeight();
+
+            int startX = 10;
+            int startY = 10;
+            int offset = 40;
+
+            graphic.DrawString(" ESSONS GLOBAL", new Font("Segoe UI", 18, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY);
+            offset = offset + 20;
+            string top = "";
+            if(!inlai)
+                top = dtChoose.Rows[0]["ChemicalOrderCode"].ToString() + "_" + dtTyLe.Rows[0]["TyLeMK1"].ToString() + "%"; 
+            else
+                top = CheckPrint.Rows[0]["ChemicalOrderCode"].ToString() + "_" + dtTyLe.Rows[0]["TyLeMK1"].ToString() + "%";
+            graphic.DrawString(top, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            offset = offset + 20;
+            if (!inlai)
+            {
+                if (dtChoose.Rows[0]["ChemicalOrderCode2"].ToString() != "")
+                {
+                    string top2 = dtChoose.Rows[0]["ChemicalOrderCode2"].ToString() + "_" + dtTyLe.Rows[0]["TyLeMK2"].ToString() + "%"; ;
+                    graphic.DrawString(top2, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+                    offset = offset + 20;
+                }
+            }
+
+            else
+                if (CheckPrint.Rows[0]["ChemicalOrderCode2"].ToString() != "")
+                {
+                    string top2 = CheckPrint.Rows[0]["ChemicalOrderCode2"].ToString() + "_" + dtTyLe.Rows[0]["TyLeMK2"].ToString() + "%"; ;
+                    graphic.DrawString(top2, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+                    offset = offset + 20;
+                }
+            graphic.DrawString(makeokg + "kg", new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            for(int i = 0; i < dtDataPrintQT1.Rows.Count; i++)
+            {
+                offset = offset + 20;
+                tenhoachatT2 = dtDataPrintQT1.Rows[i]["MaterialCode"].ToString();
+                sokgT2 = dtDataPrintQT1.Rows[i]["Weight"].ToString();
+                intimeCan = dtDataPrintQT1.Rows[i]["intime"].ToString();
+                graphic.DrawString(tenhoachatT2 + " - " + sokgT2 + "g", new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            }
+           
+            if (tenhoachatT2 == last_hoachat)
+                countLast_hoachat++;
+            else
+            {
+                last_hoachat = tenhoachatT2;
+                countLast_hoachat = 1;
+            }
+            offset = offset + (int)fontHeight; //make the spacing consistent
+            graphic.DrawString("----------------------------------", font, new SolidBrush(Color.Black), startX, startY + offset);
+            offset = offset + 20; //make some room so that the total stands out.
+            if (countLast_hoachat == 1)
+                graphic.DrawString("Số thùng: " + soauhientai + "/" + tongau, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            else
+                graphic.DrawString("Số thùng: " + soauhientai + "-" + countLast_hoachat.ToString() + "/" + tongau, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            if (makeokg != 25.ToString())
+                graphic.DrawString("LẺ", new Font("Segoe UI", 30, FontStyle.Bold), new SolidBrush(Color.Black), startX + 150, startY + offset);
+            offset = offset + 30;
+            //graphic.DrawString("Tên hộp: " + tenhop, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            //offset = offset + 30; //make some room so that the total stands out.
+            if(!inlai)
+                graphic.DrawString("Mã lệnh: " + txtQRCode.Text, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            else
+                graphic.DrawString("Mã lệnh: " + txtInLai.Text, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            offset = offset + 30; //make some room so that the total stands out.
+            //graphic.DrawString("Tổng khối lượng: " + khoiluong + "g", new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            //offset = offset + 30; //make some room so that the total stands out.
+            graphic.DrawString("Giờ cân: " + thoigianin, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset); ;
+            offset = offset + 30; //make some room so that the total stands out.
+            graphic.DrawString("Ngày cân: " + ngayin, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            offset = offset + 30; //make some room so that the total stands out.
+            graphic.DrawString("----------------------------------", font, new SolidBrush(Color.Black), startX, startY + offset);
+            offset = offset + 30;
+            QRCodeGenerator _qrCode = new QRCodeGenerator();
+            string qrcode = "";
+            if (!inlai)
+                if (dtChoose.Rows[0]["ChemicalOrderCode2"].ToString() == null || dtChoose.Rows[0]["ChemicalOrderCode2"].ToString() == "")
+                    qrcode = dtChoose.Rows[0]["ChemicalOrderCode"].ToString() + "," + DateTime.Now.ToString("yyyyMMdd") + txtQRCode.Text.Trim().Substring(10, 3);
+                else
+                    qrcode = dtChoose.Rows[0]["ChemicalOrderCode"].ToString() + dtChoose.Rows[0]["ChemicalOrderCode2"].ToString() + "," + txtQRCode.Text.Trim().Substring(10, 3);
+            else
+                qrcode = QRCode;
+
+            QRCodeData _qrCodeData = _qrCode.CreateQrCode(qrcode, QRCodeGenerator.ECCLevel.Q);
+            QRCode qrCode = new QRCode(_qrCodeData);
+            Bitmap qrCodeImage = qrCode.GetGraphic(20);
+            graphic.DrawImage(qrCodeImage, startX + 60, startY + offset, 100, 100);
+            if (!inlai)
+            {
+                bool b = SQL_Conn.updateQRCode(txtQRCode.Text.ToString(), soauhientai, qrcode, ngayin, thoigianin, 0.ToString(), 2); //Cập nhật QR code
+                for (int i = 0; i < dtDataPrintQT1.Rows.Count; i++)
+                {
+                    tenhoachatT2 = dtDataPrintQT1.Rows[i]["MaterialCode"].ToString();
+                    sokgT2 = dtDataPrintQT1.Rows[i]["Weight"].ToString();
+                    intimeCan = dtDataPrintQT1.Rows[i]["intime"].ToString();
+                    b = SQL_Conn.updateCompTram2(txtQRCode.Text.ToString(), tenhoachatT2, double.Parse(sokgT2), intimeCan);
+                }
+                    
+            }
+        }
+        public void CreateReceipt_quytrinh1(object sender, System.Drawing.Printing.PrintPageEventArgs e)
+        {
+            //this prints the reciept
+            Graphics graphic = e.Graphics;
+            Font font = new Font("Segoe UI", 12); //must use a mono spaced font as the spaces need to line up
+
+            float fontHeight = font.GetHeight();
+
+            int startX = 10;
+            int startY = 10;
+            int offset = 40;
+
+            graphic.DrawString(" ESSONS GLOBAL", new Font("Segoe UI", 18, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY);
+            offset = offset + 20;
+            string top = dtChoose.Rows[0]["ChemicalOrderCode"].ToString() + "_" + dtTyLe.Rows[0]["TyLeMK1"].ToString() + "%"; ;
+            graphic.DrawString(top, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            offset = offset + 20;
+            if (dtChoose.Rows[0]["ChemicalOrderCode2"].ToString() != "")
+            {
+                string top2 = dtChoose.Rows[0]["ChemicalOrderCode2"].ToString() + "_" + dtTyLe.Rows[0]["TyLeMK2"].ToString() + "%"; ;
+                graphic.DrawString(top2, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+                offset = offset + 20;
+            }
+            graphic.DrawString(makeokg + "kg", new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+
+            for (int i = 0; i < dtPrintQT1.Rows.Count; i++)
+            {
+                offset = offset + 20;
+                graphic.DrawString(dtPrintQT1.Rows[i]["MaterialName"].ToString() + " - " + dtPrintQT1.Rows[i]["Weight"].ToString() + "g", new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            }
+            offset = offset + (int)fontHeight; //make the spacing consistent
+            graphic.DrawString("----------------------------------", font, new SolidBrush(Color.Black), startX, startY + offset);
+            offset = offset + 20; //make some room so that the total stands out.
+            graphic.DrawString("Số thùng: " + soauhientai + "/" + tongau, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+
+            if (makeokg != 25.ToString())
+                graphic.DrawString("LẺ", new Font("Segoe UI", 30, FontStyle.Bold), new SolidBrush(Color.Black), startX + 150, startY + offset);
+            offset = offset + 30;
+            //graphic.DrawString("Tên hộp: " + tenhop, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            //offset = offset + 30; //make some room so that the total stands out.
+            graphic.DrawString("Mã lệnh: " + txtQRCode.Text, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            offset = offset + 30; //make some room so that the total stands out.
+            //graphic.DrawString("Tổng khối lượng: " + khoiluong + "g", new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            //offset = offset + 30; //make some room so that the total stands out.
+            graphic.DrawString("Giờ cân: " + thoigianin, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset); ;
+            offset = offset + 30; //make some room so that the total stands out.
+            graphic.DrawString("Ngày cân: " + ngayin, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            offset = offset + 30; //make some room so that the total stands out.
+            graphic.DrawString("----------------------------------", font, new SolidBrush(Color.Black), startX, startY + offset);
+            offset = offset + 30;
+            QRCodeGenerator _qrCode = new QRCodeGenerator();
+            string qrcode = "";
+            if (dtChoose.Rows[0]["ChemicalOrderCode2"].ToString() == null || dtChoose.Rows[0]["ChemicalOrderCode2"].ToString() == "")
+                qrcode = dtChoose.Rows[0]["ChemicalOrderCode"].ToString() + "," + DateTime.Now.ToString("yyyyMMdd") + txtQRCode.Text.Trim().Substring(10, 3);
+            else
+                qrcode = dtChoose.Rows[0]["ChemicalOrderCode"].ToString() + dtChoose.Rows[0]["ChemicalOrderCode2"].ToString() + "," + txtQRCode.Text.Trim().Substring(10, 3);
+            QRCodeData _qrCodeData = _qrCode.CreateQrCode(qrcode, QRCodeGenerator.ECCLevel.Q);
+            QRCode qrCode = new QRCode(_qrCodeData);
+            Bitmap qrCodeImage = qrCode.GetGraphic(20);
+            graphic.DrawImage(qrCodeImage, startX + 60, startY + offset, 100, 100);
+            if(!inlai)
+            {
+                bool b = SQL_Conn.updateQRCode(txtQRCode.Text.ToString(), soauhientai, qrcode, ngayin, thoigianin, 0.ToString(), 1); //Cập nhật QR code
+                b = SQL_Conn.updateCompTram1(txtQRCode.Text.ToString(), soauhientai.ToString());
+            }
         }
 
         public void CreateReceipt_InLai(object sender, System.Drawing.Printing.PrintPageEventArgs e)
@@ -1087,18 +1398,35 @@ namespace CanHoaChat
 
             graphic.DrawString(" ESSONS GLOBAL", new Font("Segoe UI", 18, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY);
             offset = offset + 20;
-            string top = makeo;
+
+
+            string top = CheckPrint.Rows[0]["ChemicalOrderCode"].ToString() + "_" + dtTyLe.Rows[0]["TyLeMK1"].ToString() + "%";
             graphic.DrawString(top, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 20;
+            if (CheckPrint.Rows[0]["ChemicalOrderCode2"].ToString() != "")
+            {
+                string top2 = CheckPrint.Rows[0]["ChemicalOrderCode2"].ToString() + "_" + dtTyLe.Rows[0]["TyLeMK2"].ToString() + "%";
+                graphic.DrawString(top2, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+                offset = offset + 20;
+            }
+
             graphic.DrawString(makeokg + "kg", new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            for (int i = 0; i < dtPrintQT2.Rows.Count; i++)
+            {
+                string tenchat = dtPrintQT2.Rows[i]["MaterialCode"].ToString();
+                string khoiluong = dtPrintQT2.Rows[i]["Weight"].ToString();
+                offset = offset + 20;
+                graphic.DrawString(tenchat + " - " + khoiluong + "g", new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            }
+
             offset = offset + (int)fontHeight; //make the spacing consistent
             graphic.DrawString("----------------------------------", font, new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 20; //make some room so that the total stands out.
             graphic.DrawString("Số hộp: " + soauhientai + "/" + tongau, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
-            if (maau.Substring(0, 2) == "AA")
+            if (makeokg != 25.ToString())
                 graphic.DrawString("LẺ", new Font("Segoe UI", 30, FontStyle.Bold), new SolidBrush(Color.Black), startX + 150, startY + offset);
             offset = offset + 30;
-            graphic.DrawString("Mã hộp: " + maau, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            graphic.DrawString("Tên hộp: " + tenhop, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 30; //make some room so that the total stands out.
             graphic.DrawString("Mã lệnh: " + txtInLai.Text, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 30; //make some room so that the total stands out.
@@ -1112,15 +1440,13 @@ namespace CanHoaChat
             offset = offset + 30;
             QRCodeGenerator _qrCode = new QRCodeGenerator();
             string qrcode = QRCode;
-            
+
             QRCodeData _qrCodeData = _qrCode.CreateQrCode(qrcode, QRCodeGenerator.ECCLevel.Q);
             QRCode qrCode = new QRCode(_qrCodeData);
             Bitmap qrCodeImage = qrCode.GetGraphic(20);
             graphic.DrawImage(qrCodeImage, startX + 60, startY + offset, 100, 100);
             //bool b = SQL_Conn.updateQRCode(txtQRCode.Text.ToString(), soauhientai, qrcode, ngayin, thoigianin, khoiluong, 1); //Cập nhật QR code
         }
-
-
         public void CreateReceipt_TEst(object sender, System.Drawing.Printing.PrintPageEventArgs e)
         {
             //this prints the reciept
@@ -1159,7 +1485,7 @@ namespace CanHoaChat
             offset = offset + 30;
             QRCodeGenerator _qrCode = new QRCodeGenerator();
             string qrcode = "";
-                qrcode = "NAMTEST";
+            qrcode = "NAMTEST";
             QRCodeData _qrCodeData = _qrCode.CreateQrCode(qrcode, QRCodeGenerator.ECCLevel.Q);
             QRCode qrCode = new QRCode(_qrCodeData);
             Bitmap qrCodeImage = qrCode.GetGraphic(20);
@@ -1171,7 +1497,7 @@ namespace CanHoaChat
         private void timer3_Tick(object sender, EventArgs e)
         {
             demau++;
-            if (demau == 7)
+            if (demau == 8)
             {
                 timer3.Enabled = false;
                 demau = 1;
@@ -1217,13 +1543,14 @@ namespace CanHoaChat
         private void btIn_Click(object sender, EventArgs e)
         {
             pPrint.Visible = true;
-            
+
         }
 
         private void btIn2_Click(object sender, EventArgs e)
         {
             DataTable dtPrint = SQL_Conn.GetPrint(txtInLai.Text.Trim());
             QRPrint = SQL_Conn.GetQRPrint(txtInLai.Text.Trim());
+            dtTyLe = SQL_Conn.GetTyLe(txtInLai.Text.Trim());
 
             PrintDocument printDocument = new PrintDocument(); //add the document to the dialog box..
             printDocument.DefaultPageSettings.PaperSize.RawKind = 119;
@@ -1232,37 +1559,62 @@ namespace CanHoaChat
             printDocument.PrinterSettings.PrinterName = printerName;
             //printDocument.PrinterSettings.PrinterName = "Microsoft Print to PDF";
             //printDocument.PrinterSettings.PrintToFile = true;
-            makeo = CheckPrint.Rows[0][2].ToString().Trim();
+            makeo = CheckPrint.Rows[0]["ChemicalOrderCode"].ToString().Trim() + CheckPrint.Rows[0]["ChemicalOrderCode2"].ToString().Trim();
             inlai = true;
-            for (int i = 0; i < dtPrint.Rows.Count; i++)
+            if(!quytrinh1)
+                for (int i = 0; i < dtPrint.Rows.Count; i++)
+                {
+                    soauhientai = i + 1;
+                    tongau = dtPrint.Rows.Count;
+                    tenhop = dtPrint.Rows[i][1].ToString();
+                    maau = dtPrint.Rows[i][2].ToString();
+                    dtPrintQT2 = SQL_Conn.SelectCompTram1(CheckPrint.Rows[0]["ManufactureOrderNo"].ToString(), maau);
+                    if (maau.Substring(0, 2) == "AU")
+                        makeokg = 25.ToString();
+                    else
+                    {
+                        makeokg = (double.Parse(CheckPrint.Rows[0]["Weight"].ToString()) - ((tongau - 1) * 25)).ToString();
+                    }
+                    khoiluong = dtPrint.Rows[i][3].ToString();
+                    var qrPrinted = QRPrint.Select("AuNumber = " + dtPrint.Rows[i][0].ToString());
+                    foreach (var item in qrPrinted)
+                    {
+                        QRCode = item[1].ToString();
+                        thoigianin = item[2].ToString();
+                        ngayin = item[3].ToString();
+                        var dtime = DateTime.ParseExact(ngayin, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+                        ngayin = dtime.ToString("dd-MM-yyyy");
+                    }
+
+                    printDocument.PrintPage += new System.Drawing.Printing.PrintPageEventHandler(CreateReceipt_InLai); //add an event handler that will do the printing                                                                                                                       //on a till you will not want to ask the user where to print but this is fine for the test envoironment.
+                    printDocument.Print();
+                }
+            else
             {
-                soauhientai = i + 1;
-                tongau = dtPrint.Rows.Count;
-                maau = dtPrint.Rows[i][1].ToString();
-                if (maau.Substring(0, 2) == "AU")
+                string tenthung = "";
+                dtDataPrintQT1 = SQL_Conn.SelectCompTram2Print(CheckPrint.Rows[0]["ManufactureOrderNo"].ToString(), cbChonThung.Text);
+                dtSortMateiral = SQL_Conn.GetSortMaterial(CheckPrint.Rows[0]["SoThe"].ToString());
+                DataRow[] r = dtSortMateiral.Select("MaterialName = '" + dtDataPrintQT1.Rows[0]["MaterialCode"].ToString() + "'");
+                foreach (var item in r)
+                    tenthung = item["AuNumber"].ToString();
+                makeo = CheckPrint.Rows[0]["ChemicalOrderCode"].ToString().Trim() + CheckPrint.Rows[0]["ChemicalOrderCode2"].ToString().Trim();
+                thoigianin = CheckPrint.Rows[0]["intime"].ToString().Trim();
+                ngayin = CheckPrint.Rows[0]["indat"].ToString().Trim();
+                var dtime = DateTime.ParseExact(ngayin, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+                ngayin = dtime.ToString("dd-MM-yyyy");
+                soauhientai = int.Parse(tenthung);
+                r = dtSortMateiral.Select("AuNumber = MAX(AuNumber)");
+                QRCode = QRPrint.Rows[0]["QRCode"].ToString();
+                foreach (var item in r)
+                    tongau = int.Parse(item["AuNumber"].ToString());
+
+                if (double.Parse(CheckPrint.Rows[0]["Weight"].ToString()) >= 25)
                     makeokg = 25.ToString();
                 else
                 {
-                    if (double.Parse(CheckPrint.Rows[0][4].ToString()) > 25)
-                    {
-                        makeokg = (double.Parse(CheckPrint.Rows[0][4].ToString()) - ((int.Parse(CheckPrint.Rows[0][4].ToString()) / 25) * 25)).ToString();
-                    }                            
-                    else
-                        makeokg = (double.Parse(CheckPrint.Rows[0][4].ToString())).ToString();
+                    makeokg = CheckPrint.Rows[0]["Weight"].ToString();
                 }
-                khoiluong = dtPrint.Rows[i][2].ToString();
-                var qrPrinted = QRPrint.Select("AuNumber = " + dtPrint.Rows[i][0].ToString());
-                foreach (var item in qrPrinted)
-                {
-                    QRCode = item[1].ToString();
-                    thoigianin = item[2].ToString();                    
-                    ngayin = item[3].ToString();
-                    var dtime = DateTime.ParseExact(ngayin, "yyyy-MM-dd", CultureInfo.InvariantCulture);
-                    ngayin = dtime.ToString("dd-MM-yyyy");
-                }
-                   
-                printDocument.PrintPage += new System.Drawing.Printing.PrintPageEventHandler(CreateReceipt_InLai); //add an event handler that will do the printing
-                                                                                                             //on a till you will not want to ask the user where to print but this is fine for the test envoironment.
+                printDocument.PrintPage += new System.Drawing.Printing.PrintPageEventHandler(CreateReceipt_quytrinh1_T2); //add an event handler that will do the printing                                                                                                                       //on a till you will not want to ask the user where to print but this is fine for the test envoironment.
                 printDocument.Print();
             }
 
@@ -1273,6 +1625,9 @@ namespace CanHoaChat
             txtInLai.Text = "";
             txtInLai.Clear();
             btIn2.Enabled = false;
+            countLast_hoachat = 0;
+            lbChonThung.Visible = false;
+            cbChonThung.Visible = false;
         }
 
         private void txtQRCode_TextChanged(object sender, EventArgs e)
@@ -1286,10 +1641,24 @@ namespace CanHoaChat
                         a.Abort();
                     }
 
+                    var AllBuckets = SQL_Conn.SelectRunMO();
+                    PLCOpen();
+                    for (int i = 0; i < AllBuckets.Rows.Count; i++)
+                    {
+                        try
+                        {
+                            open = AllBuckets.Rows[i][2].ToString().Split('.');
+                            light = AllBuckets.Rows[i][3].ToString().Split('.');
+                            cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(open[0]), Int16.Parse(open[1]));
+                            cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(light[0]), Int16.Parse(light[1]));
+                        }
+                        catch { }
+                    }
+
                     dtChoose = SQL_Conn.SelectMO(txtQRCode.Text.ToString());
                     if (dtChoose.Rows.Count == 0)
-                    {                    
-                        msg error = new msg("Lệnh sản xuất không phải ngày hôm nay.");
+                    {
+                        msg error = new msg("Lệnh sản xuất đã hoàn thành.");
                         error.TopMost = true;
                         error.Show();
                         txtQRCode.Text = "";
@@ -1299,9 +1668,19 @@ namespace CanHoaChat
                     }
                     else
                     {
-                        COMOpen();
+                        if (!comport.IsOpen)
+                            COMOpen();
                         PLCOpen();
 
+                        DataRow[] r = dtChoose.Select(@"SoThe like '%_1'");
+                        if (r.Length > 0)
+                        {
+                            dtSortMateiral = SQL_Conn.GetSortMaterial(dtChoose.Rows[0]["SoThe"].ToString());
+                            quytrinh1 = true;
+                            dtTyLe = SQL_Conn.GetTyLe(dtChoose.Rows[0][0].ToString());
+                        }
+                        else
+                            quytrinh1 = false;
                         Au = null;
                         Total = null;
                         soau = 1;
@@ -1315,12 +1694,37 @@ namespace CanHoaChat
                         inlai = false;
                         checkAu = false;
                         stoptime = false;
+                        username = Error.User;
+                        for (int k = 0; k < dgCty.Columns.Count; k++)
+                        {
+                            dgCty.Columns[k].Visible = true;     //Hides Column
+                        }
+
+                        for (int k = 0; k < dgCty2.Columns.Count; k++)
+                        {
+                            dgCty2.Columns[k].Visible = true;     //Hides Column
+                        }
+
+                        for (int k = 0; k < dgCty3.Columns.Count; k++)
+                        {
+                            dgCty3.Columns[k].Visible = true;     //Hides  Column
+                        }
+
+                        for (int k = 0; k < dgCty4.Columns.Count; k++)
+                        {
+                            dgCty4.Columns[k].Visible = true;
+                        }
+                        dgCty.DataSource = null;
+                        dgCty2.DataSource = null;
+                        dgCty3.DataSource = null;
+                        dgCty4.DataSource = null;
 
                         mo = txtQRCode.Text;
                         btDongThung.Visible = true;
                         btXacNhan.Visible = true;
                         lbMaKeo.Visible = true;
                         lbSoMe.Visible = true;
+                        lbSoKG.Visible = true;
                         panelAu.Visible = true; //Hiện panel Âu để cân âu
                         txtQRAu.SelectAll();
 
@@ -1328,10 +1732,11 @@ namespace CanHoaChat
                         //var expression = "ManufactureOrderNo = '" + txtQRCode + "'";
                         dtBuckets = SQL_Conn.SelectBuckets(txtQRCode.Text.ToString());
 
+
                         dtChooseCTY = SQL_Conn.SelectCommandCTY(txtQRCode.Text.ToString(), 1);
                         MaterialTemp = SQL_Conn.SelectCommandTemp(txtQRCode.Text.ToString(), 1);
-                        Au = new string[int.Parse(dtChoose.Rows[0][3].ToString()), 2]; //Khai báo số Âu theo lệnh điều động
-                        Total = new string[int.Parse(dtChoose.Rows[0][3].ToString()), 2]; //Khai báo tổng số lượng của từng âu
+                        Au = new string[int.Parse(dtChoose.Rows[0]["BatchNo"].ToString()), 2]; //Khai báo số Âu theo lệnh điều động
+                        Total = new string[int.Parse(dtChoose.Rows[0]["BatchNo"].ToString()), 2]; //Khai báo tổng số lượng của từng âu
 
 
                         //Gán dữ liệu để quét tiếp nếu bị lỗi cân khi đang quét
@@ -1340,7 +1745,10 @@ namespace CanHoaChat
                             Au[i, 0] = MaterialTemp.Rows[i][1].ToString();
                             Au[i, 1] = MaterialTemp.Rows[i][4].ToString();
                             Total[i, 0] = MaterialTemp.Rows[i][1].ToString();
-                            Total[i, 1] = MaterialTemp.Rows[i][5].ToString();
+                            if(quytrinh1)
+                                Total[i, 1] = 0.ToString();
+                            else
+                                Total[i, 1] = MaterialTemp.Rows[i][5].ToString();
 
                             int ChemicalStt = int.Parse(MaterialTemp.Rows[i][3].ToString());
                             int AuNumber = int.Parse(MaterialTemp.Rows[i][2].ToString());
@@ -1353,7 +1761,7 @@ namespace CanHoaChat
                             if (ChemicalStt >= Stt_Temp && ChemicalStt > 0)
                             {
                                 Stt_Temp = ChemicalStt;
-                                if (AuNumber == int.Parse(dtChoose.Rows[0][3].ToString()))
+                                if (AuNumber == int.Parse(dtChoose.Rows[0]["BatchNo"].ToString()))
                                 {
                                     Stt_Temp += 1;
                                     Stt_Can_Temp = 0;
@@ -1364,8 +1772,15 @@ namespace CanHoaChat
                         }
 
                         //Gán thông tin keo mà tổng số âu
-                        lbMaKeo.Text = "Mã keo: " + dtChoose.Rows[0][2].ToString();
-                        lbSoMe.Text = "Tổng số hộp: " + dtChoose.Rows[0][3].ToString();
+                        lbSoKG.Text = "Số KG: " + dtChoose.Rows[0]["Weight"].ToString();
+                        lbMaKeo.Text = "Mã keo 1: " + dtChoose.Rows[0]["ChemicalOrderCode"].ToString();
+                        if (dtChoose.Rows[0]["ChemicalOrderCode2"].ToString() != "")
+                        {
+                            lbMaKeo2.Visible = true;
+                            lbMaKeo2.Text = "Mã keo 2: " + dtChoose.Rows[0]["ChemicalOrderCode2"].ToString();
+                        }
+
+                        lbSoMe.Text = "Tổng số hộp: " + dtChoose.Rows[0]["BatchNo"].ToString();
 
                         //Mở timer 2 kiểm tra Âu
                         timer2.Enabled = true;
@@ -1375,7 +1790,7 @@ namespace CanHoaChat
                         a.IsBackground = true;
                         a.Start();
                     }
-                }  
+                }
             }
             catch { }
         }
@@ -1387,10 +1802,58 @@ namespace CanHoaChat
         {
             try
             {
-                if(show == 0)
+                if (show == 0)
                     m = new msg("Chờ cân trạm 2");
-                
+                timeout = 0;
                 btDongThung.Visible = false;
+
+                if(quytrinh1)
+                {
+                    var dtPrintT2 = SQL_Conn.CheckCompTram2(dtChoose.Rows[0]["ManufactureOrderNo"].ToString().Trim());
+
+                    if (dtPrintT2.Rows.Count > 0)
+                    {
+                        string tenthung = "";
+                        DataRow[] r = dtSortMateiral.Select("MaterialName = '" + dtPrintT2.Rows[0]["MaterialCode"].ToString() + "'");
+                        foreach (var item in r)
+                            tenthung = item["AuNumber"].ToString();
+
+                        if (dtPrintT2.Rows[0]["MaterialCode"].ToString() == "VM56" || dtPrintT2.Rows[0]["MaterialCode"].ToString() == "AS-150")
+                        {
+                            var countMaterialT2 = SQL_Conn.CountMaterialT2(dtChoose.Rows[0]["ManufactureOrderNo"].ToString(), dtPrintT2.Rows[0]["MaterialCode"].ToString());
+                            countLast_hoachat = countMaterialT2.Rows.Count - 1;
+                            if (countMaterialT2.Rows.Count > 0)
+                                last_hoachat = countMaterialT2.Rows[0]["MaterialCode"].ToString();
+                        }
+                        dtDataPrintQT1 = SQL_Conn.SelectCompTram2(dtChoose.Rows[0]["ManufactureOrderNo"].ToString().Trim(), tenthung);
+
+                        PrintDocument printDocument = new PrintDocument(); //add the document to the dialog box..
+                        printDocument.DefaultPageSettings.PaperSize.RawKind = 119;
+                        printDocument.PrinterSettings.DefaultPageSettings.PaperSize.RawKind = 119;
+                        printDocument.DefaultPageSettings.Landscape = false;
+                        printDocument.PrinterSettings.PrinterName = printerName;
+                        makeo = dtChoose.Rows[0]["ChemicalOrderCode"].ToString() + dtChoose.Rows[0]["ChemicalOrderCode2"].ToString();
+                        thoigianin = DateTime.Now.ToString("HH:mm:ss");
+                        ngayin = DateTime.Now.ToString("dd-MM-yyyy");
+                        soauhientai = int.Parse(tenthung);
+                        r = dtSortMateiral.Select("AuNumber = MAX(AuNumber)");
+                        foreach (var item in r)
+                            tongau = int.Parse(item["AuNumber"].ToString());
+
+                        if (double.Parse(dtChoose.Rows[0]["Weight"].ToString()) >= 25)
+                            makeokg = 25.ToString();
+                        else
+                        {
+                            makeokg = dtChoose.Rows[0]["Weight"].ToString();
+                        }
+
+                        printDocument.PrintPage += new System.Drawing.Printing.PrintPageEventHandler(CreateReceipt_quytrinh1_T2); //add an event handler that will do the printing
+                                                                                                                                  //on a till you will not want to ask the user where to print but this is fine for the test envoironment.
+                        printDocument.Print();
+                    }
+                }
+               
+                
                 DataTable dt = SQL_Conn.CheckAll(txtQRCode.Text.ToString());
                 if (dt.Rows.Count == 0)
                 {
@@ -1401,14 +1864,15 @@ namespace CanHoaChat
                     }
                     catch { }
 
+                    lbMaKeo2.Visible = false;
                     lbMaKeo.Visible = false;
                     lbSoMe.Visible = false;
                     panelAu.Visible = false;
                     panelCan.Visible = false;
                     SQL_Conn.updateCommand(txtQRCode.Text); //Cập nhật hoàn thành 
                     timer6.Enabled = false;
-                    stoptime = true; //Dừng cân
-
+                    quytrinh1 = false;
+                    stoptime = true; //Dừng cân                    
                 }
                 else
                 {
@@ -1419,9 +1883,11 @@ namespace CanHoaChat
                         show++;
                     }
                 }
+
+
             }
             catch { }
-           
+
         }
 
         private void UCCanBanTuDong_MouseHover(object sender, EventArgs e)
@@ -1452,20 +1918,20 @@ namespace CanHoaChat
         {
             try
             {
-                dongthung = true;         
+                dongthung = true;
             }
             catch { }
         }
 
         int f = 0;
         private void timer8_Tick(object sender, EventArgs e)
-        {           
-            if(dongthung == true || f >= 20)
+        {
+            if (dongthung == true || f >= 20)
             {
                 f = 0;
                 dongthung = true;
                 timer8.Enabled = false;
-                
+
             }
             else
                 f = f + 1;
@@ -1473,8 +1939,8 @@ namespace CanHoaChat
 
         private void btXacNhan_Click(object sender, EventArgs e)
         {
-                choqua = true;
-                btXacNhan.Enabled = false;
+            choqua = true;
+            btXacNhan.Enabled = false;
             Thread.Sleep(3000);
         }
 
@@ -1486,9 +1952,9 @@ namespace CanHoaChat
             printDocument.DefaultPageSettings.Landscape = false;
             printDocument.PrinterSettings.PrinterName = "Microsoft Print to PDF";
             printDocument.PrinterSettings.PrintToFile = true;
-                printDocument.PrintPage += new System.Drawing.Printing.PrintPageEventHandler(CreateReceipt_TEst); //add an event handler that will do the printing
-                                                                                                             //on a till you will not want to ask the user where to print but this is fine for the test envoironment.
-                printDocument.Print();
+            printDocument.PrintPage += new System.Drawing.Printing.PrintPageEventHandler(CreateReceipt_TEst); //add an event handler that will do the printing
+                                                                                                              //on a till you will not want to ask the user where to print but this is fine for the test envoironment.
+            printDocument.Print();
         }
 
         private void txtInLai_TextChanged(object sender, EventArgs e)
@@ -1496,15 +1962,34 @@ namespace CanHoaChat
             if (txtInLai.Text.Length >= 13)
             {
                 CheckPrint = SQL_Conn.CheckPrint(txtInLai.Text);
-                if(CheckPrint.Rows.Count > 0)
+                if (CheckPrint.Rows.Count > 0)
+                {
+                    DataRow[] r = CheckPrint.Select(@"SoThe like '%_1'");
+                    if (r.Length > 0)
+                    {
+                        dtSortMateiral = SQL_Conn.GetSortMaterial(CheckPrint.Rows[0]["SoThe"].ToString());
+                        quytrinh1 = true;
+                        r = dtSortMateiral.Select("AuNumber = MAX(AuNumber)");
+                        int sothung = 0;
+                        foreach (var item in r)
+                            sothung = int.Parse(item["AuNumber"].ToString());
+                        for (int i = 1; i <= sothung; i++)
+                            cbChonThung.Items.Add(i.ToString());
+                        lbChonThung.Visible = true;
+                        cbChonThung.Visible = true;
+                    }
+
+                   
                     btIn2.Enabled = true;
+                }                  
                 else
                 {
-                    msg mes = new msg("Mã lệnh này không phải ngày hôm nay");
+                    msg mes = new msg("Mã lệnh này chưa hoàn thành hoặc không phải hôm nay");
                     mes.Show();
                     txtInLai.Focus();
                     txtInLai.Text = "";
                     txtInLai.Clear();
+                    btIn2.Enabled = false;
                 }
 
             }

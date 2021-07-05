@@ -64,6 +64,7 @@ namespace CanHoaChat
                 mResult.Controls.Add(uc);
                 this.ShowIcon = true;
                 this.ShowInTaskbar = true;
+                FormUsed.FormNow = "Main";
             }
             catch { }
         }
@@ -73,18 +74,31 @@ namespace CanHoaChat
             try
             {
                 FormUsed.FormNow = "Main";
+                mResult.Controls["UCCanBanTuDong"].Enabled = false;
                 UserControl uc = (mResult.Controls["UCCanBanTuDong"] as UserControl);
                 uc.Parent.Controls.Remove(this);
                 Form1_Load(sender, e);
                  mResult.Controls["UCCanBanTuDong"].Controls.Clear();
-                //mResult.Controls["UCCanBanTuDong2"].Dispose();
-                //mResult.Controls["UCLichSuCan"].Dispose();
-                //mResult.Controls.Clear();
             }
             catch {
-                mResult.Controls.Clear();
+               
             }
 
+            try
+            {
+                FormUsed.FormNow = "Main";
+                mResult.Controls["UCCanBanTuDong2"].Enabled = false;
+                UserControl uc = (mResult.Controls["UCCanBanTuDong2"] as UserControl);
+                uc.Parent.Controls.Remove(this);
+                Form1_Load(sender, e);
+                mResult.Controls["UCCanBanTuDong2"].Controls.Clear();
+            }
+            catch
+            {
+              
+            }
+
+            mResult.Controls.Clear();
             Form1.Instance.MetroContainer.Controls.Clear();
             PictureBox myform1textbox1 = (Form1.Instance.Controls["pbTram"] as PictureBox);
             myform1textbox1.Visible = false;

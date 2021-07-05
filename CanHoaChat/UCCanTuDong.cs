@@ -43,32 +43,10 @@ namespace CanHoaChat
 
         private void txtQRCode_TextChanged(object sender, EventArgs e)
         {
-            if(txtQRCode.Text.Length >= 3)
+            if(txtQRCode.Text.Length >= 1)
             {
-                string[] open = new string[2]; //Mo thung
-                string[] light = new string[2];
-                DataTable dt = SQL_Conn.GetBucketPosition(int.Parse(txtQRCode.Text));
-
-                try
-                {
-                    open = dt.Rows[0][2].ToString().Split('.');
-                    light = dt.Rows[0][3].ToString().Split('.');
-
-                    var a = cJ2Compolet1.ReadMemoryBit(OMRON.Compolet.CIP.CJ2Compolet.MemoryTypes.CIO, int.Parse(open[0]), Int16.Parse(open[1]));
-                    if (a == true)
-                    {
-                        cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(open[0]), Int16.Parse(open[1]));
-                        cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(light[0]), Int16.Parse(light[1]));
-                    }
-                    else
-                    {
-                        cJ2Compolet1.ForceSet(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(open[0]), Int16.Parse(open[1]));
-                        cJ2Compolet1.ForceSet(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(light[0]), Int16.Parse(light[1]));
-                    }
-                }
-                catch { }
-
-                txtQRCode.Text = "";
+                if(!timer2.Enabled)
+                    timer2.Enabled = true;
             }
         }
 
@@ -79,9 +57,55 @@ namespace CanHoaChat
             timeout = timeout + 5;
             if (timeout >= 700)
             {
+                timeout = 0;
                 MetroLink link = (Form1.Instance.Controls["mlBack"] as MetroLink);
                 link.PerformClick();
             }
+        }
+
+        int show = 0;
+        private void timer2_Tick(object sender, EventArgs e)
+        {
+            show++;
+            timeout = 0;
+            if(show == 1)
+            {
+                string[] open = new string[2]; //Mo thung
+                string[] light = new string[2];
+                DataTable dt = SQL_Conn.GetBucketPosition(txtQRCode.Text);
+
+                if (dt.Rows.Count > 0)
+                {
+                    try
+                    {
+                        open = dt.Rows[0][2].ToString().Split('.');
+                        light = dt.Rows[0][3].ToString().Split('.');
+
+                        var a = cJ2Compolet1.ReadMemoryBit(OMRON.Compolet.CIP.CJ2Compolet.MemoryTypes.CIO, int.Parse(open[0]), Int16.Parse(open[1]));
+                        if (a == true)
+                        {
+                            cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(open[0]), Int16.Parse(open[1]));
+                            cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(light[0]), Int16.Parse(light[1]));
+                        }
+                        else
+                        {
+                            cJ2Compolet1.ForceSet(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(open[0]), Int16.Parse(open[1]));
+                            cJ2Compolet1.ForceSet(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(light[0]), Int16.Parse(light[1]));
+                        }
+                    }
+                    catch { }
+                    txtQRCode.Text = "";
+                    timer2.Enabled = false;
+                    show = 0;
+                }
+                else
+                {
+                    txtQRCode.Text = "";                    
+                    timer2.Enabled = false;
+                    show = 0;
+                }
+            }
+            
         }
     }
 }

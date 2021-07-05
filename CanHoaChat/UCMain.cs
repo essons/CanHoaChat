@@ -49,6 +49,7 @@ namespace CanHoaChat
 
         private void metroTile2_Click(object sender, EventArgs e)
         {
+            FormUsed.FormNow = "";
             Form1.Instance.MetroContainer.Controls.Clear();
             PictureBox myform1textbox1 = (Form1.Instance.Controls["pbTram"] as PictureBox);
             myform1textbox1.Image = Image.FromFile("2.png");
@@ -65,6 +66,7 @@ namespace CanHoaChat
 
         private void metroTile3_Click(object sender, EventArgs e)
         {
+            FormUsed.FormNow = "";
             Form1.Instance.MetroContainer.Controls.Clear();
             if (!Form1.Instance.MetroContainer.Controls.ContainsKey("UCLichSuCan"))
             {
@@ -123,10 +125,11 @@ namespace CanHoaChat
                 }
                 else
                 {
-                    lbError.Text = "Số thẻ không có quyền truy cập";
-                    txtQRNV.Focus();
                     txtQRNV.Text = "";
+                    txtQRNV.Clear();
+                    txtQRNV.Focus();
                     txtQRNV.SelectAll();
+                    lbError.Text = "Số thẻ không có quyền truy cập";
                 }
             }
         }

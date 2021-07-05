@@ -22,23 +22,24 @@ namespace CanHoaChat
         private void UCLichSuCan_Load(object sender, EventArgs e)
         {
             timeout = 0;
-            string MO, SoThe, ChemicalOrder, BatchNo, Weight, intime, indat, username, status = "";
+            string MO, SoThe, ChemicalOrder, ChemicalOrder2 ,BatchNo, Weight, intime, indat, username, status = "";
             DataTable dt = SQL_Conn.SelectHistory();
             for(int i = 0; i < dt.Rows.Count; i++)
             {
                 MO = dt.Rows[i][0].ToString();
                 SoThe = dt.Rows[i][1].ToString();
                 ChemicalOrder = dt.Rows[i][2].ToString();
-                BatchNo = dt.Rows[i][3].ToString();
-                Weight = dt.Rows[i][4].ToString();
-                intime = dt.Rows[i][5].ToString();
-                indat = dt.Rows[i][6].ToString();
-                username = dt.Rows[i][8].ToString();
-                if (dt.Rows[i][8].ToString() == "1")
+                ChemicalOrder2 = dt.Rows[i][3].ToString();
+                BatchNo = dt.Rows[i][4].ToString();
+                Weight = dt.Rows[i][5].ToString();
+                intime = dt.Rows[i][6].ToString();
+                indat = dt.Rows[i][7].ToString();
+                username = dt.Rows[i][9].ToString();
+                if (dt.Rows[i][10].ToString() == "1")
                     status = "Hoàn thành";
                 else
                     status = "Đang chạy";
-                dataGridView1.Rows.Add(MO, SoThe, ChemicalOrder, BatchNo, Weight, intime, indat, username, status);
+                dataGridView1.Rows.Add(MO, SoThe, ChemicalOrder, ChemicalOrder2, BatchNo, Weight, intime, indat, username, status);
                 
             }
             dataGridView1.Refresh();
@@ -49,6 +50,7 @@ namespace CanHoaChat
             timeout = timeout + 5;
             if (timeout >= 700)
             {
+                timeout = 0;
                 MetroLink link = (Form1.Instance.Controls["mlBack"] as MetroLink);
                 link.PerformClick();
             }
