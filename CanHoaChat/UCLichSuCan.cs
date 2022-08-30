@@ -23,7 +23,7 @@ namespace CanHoaChat
         {
             timeout = 0;
             string MO, SoThe, ChemicalOrder, ChemicalOrder2 ,BatchNo, Weight, intime, indat, username, status = "";
-            DataTable dt = SQL_Conn.SelectHistory();
+            DataTable dt = SQL_Conn.SelectHistory_V2();
             for(int i = 0; i < dt.Rows.Count; i++)
             {
                 MO = dt.Rows[i][0].ToString();

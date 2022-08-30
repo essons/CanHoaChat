@@ -34,13 +34,19 @@
             this.cJ2Compolet1 = new OMRON.Compolet.CIP.CJ2Compolet(this.components);
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.timer2 = new System.Windows.Forms.Timer(this.components);
+            this.txtJob = new System.Windows.Forms.TextBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.dataGridView1 = new System.Windows.Forms.DataGridView();
+            this.dataGridView2 = new System.Windows.Forms.DataGridView();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).BeginInit();
             this.SuspendLayout();
             // 
             // metroLabel1
             // 
             this.metroLabel1.FontSize = MetroFramework.MetroLabelSize.Tall;
             this.metroLabel1.FontWeight = MetroFramework.MetroLabelWeight.Bold;
-            this.metroLabel1.Location = new System.Drawing.Point(440, 336);
+            this.metroLabel1.Location = new System.Drawing.Point(420, 156);
             this.metroLabel1.Name = "metroLabel1";
             this.metroLabel1.Size = new System.Drawing.Size(165, 30);
             this.metroLabel1.TabIndex = 0;
@@ -61,7 +67,7 @@
             this.txtQRCode.CustomButton.UseSelectable = true;
             this.txtQRCode.CustomButton.Visible = false;
             this.txtQRCode.Lines = new string[0];
-            this.txtQRCode.Location = new System.Drawing.Point(614, 331);
+            this.txtQRCode.Location = new System.Drawing.Point(594, 151);
             this.txtQRCode.MaxLength = 30;
             this.txtQRCode.Name = "txtQRCode";
             this.txtQRCode.PasswordChar = '\0';
@@ -85,7 +91,7 @@
             this.cJ2Compolet1.ConnectionType = OMRON.Compolet.CIP.ConnectionType.UCMM;
             this.cJ2Compolet1.HeartBeatTimer = 0;
             this.cJ2Compolet1.LocalPort = 2;
-            this.cJ2Compolet1.PeerAddress = "10.0.14.22";
+            this.cJ2Compolet1.PeerAddress = "10.0.18.91";
             this.cJ2Compolet1.ReceiveTimeLimit = ((long)(750));
             this.cJ2Compolet1.RoutePath = "";
             this.cJ2Compolet1.UseRoutePath = false;
@@ -101,17 +107,61 @@
             this.timer2.Interval = 1000;
             this.timer2.Tick += new System.EventHandler(this.timer2_Tick);
             // 
+            // txtJob
+            // 
+            this.txtJob.Location = new System.Drawing.Point(594, 212);
+            this.txtJob.Name = "txtJob";
+            this.txtJob.Size = new System.Drawing.Size(280, 22);
+            this.txtJob.TabIndex = 2;
+            this.txtJob.TextChanged += new System.EventHandler(this.txtJob_TextChanged);
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(497, 215);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(53, 17);
+            this.label1.TabIndex = 3;
+            this.label1.Text = "Job No";
+            // 
+            // dataGridView1
+            // 
+            this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridView1.Location = new System.Drawing.Point(155, 336);
+            this.dataGridView1.Name = "dataGridView1";
+            this.dataGridView1.RowHeadersWidth = 51;
+            this.dataGridView1.RowTemplate.Height = 24;
+            this.dataGridView1.Size = new System.Drawing.Size(1175, 150);
+            this.dataGridView1.TabIndex = 4;
+            // 
+            // dataGridView2
+            // 
+            this.dataGridView2.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridView2.Location = new System.Drawing.Point(155, 520);
+            this.dataGridView2.Name = "dataGridView2";
+            this.dataGridView2.RowHeadersWidth = 51;
+            this.dataGridView2.RowTemplate.Height = 24;
+            this.dataGridView2.Size = new System.Drawing.Size(1175, 150);
+            this.dataGridView2.TabIndex = 5;
+            // 
             // UCCanTuDong
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.dataGridView2);
+            this.Controls.Add(this.dataGridView1);
+            this.Controls.Add(this.label1);
+            this.Controls.Add(this.txtJob);
             this.Controls.Add(this.txtQRCode);
             this.Controls.Add(this.metroLabel1);
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "UCCanTuDong";
             this.Size = new System.Drawing.Size(1538, 781);
             this.Load += new System.EventHandler(this.UCCanTuDong_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -122,5 +172,9 @@
         private OMRON.Compolet.CIP.CJ2Compolet cJ2Compolet1;
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.Timer timer2;
+        private System.Windows.Forms.TextBox txtJob;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.DataGridView dataGridView1;
+        private System.Windows.Forms.DataGridView dataGridView2;
     }
 }
