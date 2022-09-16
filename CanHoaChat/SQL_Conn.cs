@@ -351,6 +351,38 @@ namespace CanHoaChat
             }
 
         }
+        public static DataTable GetMOFromJob(string JobNo)
+        {
+            string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
+            //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("sp_CanDien_V2", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                         new SqlParameter("@JobNo", JobNo));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@type", "GetMOFromJob"));
+                    SqlDataReader sdr = cmd.ExecuteReader();
+                    DataTable dt = new DataTable();
+                    dt.Load(sdr);
+                    return dt;
+                }
+                catch (Exception ex)
+                {
+                    return new DataTable();
+                }
+                finally
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        conn.Close();
+                }
+            }
+
+        }
         public static DataTable SelectDetail_V2(string ManufactureOrderNo, int MachineNo)
         {
             string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";

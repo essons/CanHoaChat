@@ -252,7 +252,7 @@ namespace CanHoaChat
             var byteArray = Encoding.ASCII.GetBytes($"{"itdev"}:{"P@ssw0rd123"}");
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
 
-            txtQRCode.Text = "";
+            cbMO.Text = "";
             txtJob.Focus();
             txtJob.SelectAll();
         }
@@ -719,8 +719,7 @@ namespace CanHoaChat
         }
 
         private void SetTimerCheckTram2(string text)
-        {
-            this.timer6.Enabled = true;
+        {          this.timer6.Enabled = true;
         }
         private void DongThung(string text)
         {
@@ -772,13 +771,13 @@ namespace CanHoaChat
         private void UpdateTemp(string text)
         {
             if (text == "1") //Update tạm bì hộp
-                SQL_Conn.updateAuTemp_V2(txtQRCode.Text.ToString(), txtCanAu.WaterMark, txtQRAu.Text, stt.ToString(), 1);
+                SQL_Conn.updateAuTemp_V2(cbMO.Text.ToString(), txtCanAu.WaterMark, txtQRAu.Text, stt.ToString(), 1);
             if (text == "4") //Update chi tiết hóa chất
             {
                 if (!quytrinh1)
-                    SQL_Conn.updateTempDetail_V2(txtQRCode.Text, aunumber, 0, MaterialCode, MaterialName, ActualKG, 1, username);
+                    SQL_Conn.updateTempDetail_V2(cbMO.Text, aunumber, 0, MaterialCode, MaterialName, ActualKG, 1, username);
                 else
-                    SQL_Conn.updateTempDetail_V2(txtQRCode.Text, aunumber, int.Parse(tenthung), MaterialCode, MaterialName, ActualKG, 1, username);
+                    SQL_Conn.updateTempDetail_V2(cbMO.Text, aunumber, int.Parse(tenthung), MaterialCode, MaterialName, ActualKG, 1, username);
             }
 
         }
@@ -1045,7 +1044,7 @@ namespace CanHoaChat
                         printDocument.DefaultPageSettings.Landscape = false;
                         printDocument.PrinterSettings.PrinterName = printerName;
 
-                        dtMaterialDetail = SQL_Conn.GetDetailPrint_V2(txtQRCode.Text.ToString());
+                        dtMaterialDetail = SQL_Conn.GetDetailPrint_V2(cbMO.Text.ToString());
 
                         DataRow[] dr = dtMaterialDetail.Select("AuNumber = MAX(AuNumber)");
                         tongau = int.Parse(dr[0]["AuNumber"].ToString());
@@ -1133,9 +1132,20 @@ namespace CanHoaChat
                     m.TopMost = true;
                     m.Show();
 
-                    txtQRCode.Text = "";
-                    txtQRCode.Focus();
-                    txtQRCode.SelectAll();
+                    string job = txtJob.Text.Substring(0, 11);
+                    DataTable dtMO = SQL_Conn.GetMOFromJob(job);
+                    if (dtMO.Rows.Count > 0)
+                    {
+                        cbMO.DataSource = dtMO;
+                        cbMO.DisplayMember = "ManufactureOrderNo";
+                        cbMO.ValueMember = "ManufactureOrderNo";
+                    }
+                    else
+                    {
+                        MessageBox.Show("Job đã hoàn thành lệnh cân");
+                        txtJob.Focus();
+                        txtJob.SelectAll();
+                    }
                     //Tắt timer
                     timer1.Enabled = false;
                 }
@@ -1232,9 +1242,8 @@ namespace CanHoaChat
                 m.TopMost = true;
                 m.Show();
 
-                txtQRCode.Text = "";
-                txtQRCode.Focus();
-                txtQRCode.SelectAll();
+                cbMO.Text = "";
+                cbMO.Focus();
                 //Tắt timer
                 timer1.Enabled = false;
             }
@@ -1322,9 +1331,9 @@ namespace CanHoaChat
             graphic.DrawString("Tên hộp: " + tenhop, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 30; //make some room so that the total stands out.
             if (inlai == false)
-                graphic.DrawString("Mã lệnh: " + txtQRCode.Text, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+                graphic.DrawString("Mã lệnh: " + cbMO.Text, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             else
-                graphic.DrawString("Mã lệnh: " + txtQRCode.Text, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+                graphic.DrawString("Mã lệnh: " + cbMO.Text, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 30; //make some room so that the total stands out.
             graphic.DrawString("Số Job: " + dtChoose.Rows[0]["JobNo"].ToString(), new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 30; //make some room so that the total stands out.
@@ -1352,10 +1361,10 @@ namespace CanHoaChat
             QRCode qrCode = new QRCode(_qrCodeData);
             Bitmap qrCodeImage = qrCode.GetGraphic(20);
             graphic.DrawImage(qrCodeImage, startX + 60, startY + offset, 100, 100);
-            bool b = SQL_Conn.updateQRCode_V2(txtQRCode.Text.ToString(), soauhientai, 0, qrcode, ngayin, thoigianin, khoiluong, 1); //Cập nhật QR code
+            bool b = SQL_Conn.updateQRCode_V2(cbMO.Text.ToString(), soauhientai, 0, qrcode, ngayin, thoigianin, khoiluong, 1); //Cập nhật QR code
             while (b != true)
             {
-                b = SQL_Conn.updateQRCode_V2(txtQRCode.Text.ToString(), soauhientai, 0, qrcode, ngayin, thoigianin, khoiluong, 1); //Cập nhật QR code
+                b = SQL_Conn.updateQRCode_V2(cbMO.Text.ToString(), soauhientai, 0, qrcode, ngayin, thoigianin, khoiluong, 1); //Cập nhật QR code
                 Thread.Sleep(3000);
             }
         }
@@ -1522,7 +1531,7 @@ namespace CanHoaChat
             //graphic.DrawString("Tên hộp: " + tenhop, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             //offset = offset + 30; //make some room so that the total stands out.
             if (!inlai)
-                graphic.DrawString("Mã lệnh: " + txtQRCode.Text, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+                graphic.DrawString("Mã lệnh: " + cbMO.Text, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             else
                 graphic.DrawString("Mã lệnh: " + txtInLai.Text.Substring(0,11), new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 30; //make some room so that the total stands out.
@@ -1543,10 +1552,10 @@ namespace CanHoaChat
             graphic.DrawImage(qrCodeImage, startX + 60, startY + offset, 100, 100);
             if (!inlai)
             {
-                bool b = SQL_Conn.updateQRCode_V2(txtQRCode.Text.ToString(), soauhientai, countLast_hoachat, qrcode, ngayin, thoigianin, 0.ToString(), 2); //Cập nhật QR code
+                bool b = SQL_Conn.updateQRCode_V2(cbMO.Text.ToString(), soauhientai, countLast_hoachat, qrcode, ngayin, thoigianin, 0.ToString(), 2); //Cập nhật QR code
                 while (b != true)
                 {
-                    b = SQL_Conn.updateQRCode_V2(txtQRCode.Text.ToString(), soauhientai, countLast_hoachat, qrcode, ngayin, thoigianin, 0.ToString(), 2);
+                    b = SQL_Conn.updateQRCode_V2(cbMO.Text.ToString(), soauhientai, countLast_hoachat, qrcode, ngayin, thoigianin, 0.ToString(), 2);
                     Thread.Sleep(3000);
                 }
             }
@@ -1612,10 +1621,10 @@ namespace CanHoaChat
             QRCode qrCode = new QRCode(_qrCodeData);
             Bitmap qrCodeImage = qrCode.GetGraphic(20);
             graphic.DrawImage(qrCodeImage, startX + 60, startY + offset, 100, 100);
-            bool b = SQL_Conn.updateQRCode_V2(txtQRCode.Text.ToString(), soauhientai, 0, qrcode, ngayin, thoigianin, 0.ToString(), 1); //Cập nhật QR code
+            bool b = SQL_Conn.updateQRCode_V2(cbMO.Text.ToString(), soauhientai, 0, qrcode, ngayin, thoigianin, 0.ToString(), 1); //Cập nhật QR code
             while (b != true)
             {
-                b = SQL_Conn.updateCompTram1_V2(txtQRCode.Text.ToString(), soauhientai.ToString());
+                b = SQL_Conn.updateCompTram1_V2(cbMO.Text.ToString(), soauhientai.ToString());
                 Thread.Sleep(3000);
             }
         }
@@ -1875,209 +1884,7 @@ namespace CanHoaChat
 
         private void txtQRCode_TextChanged(object sender, EventArgs e)
         {
-            try
-            {
-                if (txtQRCode.Text.Length >= 13)
-                {
-                    if (a.IsAlive)
-                    {
-                        a.Abort();
-                    }
-                    //Get từ epicor từ số job lấy bin đang mở để đóng lại chạy job mới
-                    //PLCOpen();
-
-                    var JobNoTB = SQL_Conn.SelectRunMO_V2();
-                    if (JobNoTB.Rows.Count > 0)
-                    {
-                        response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_AllBinInJob?JobNo=" + JobNoTB.Rows[0][0].ToString()).Result;
-
-                        while (response.IsSuccessStatusCode == false)
-                        {
-                            Thread.Sleep(3000);
-                            response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_AllBinInJob?JobNo=" + JobNoTB.Rows[0][0].ToString()).Result;
-                        }
-
-
-                        AllBuckets = GetDataTableFromJsonString(response.Content.ReadAsStringAsync().Result);
-                        for (int i = 0; i < AllBuckets.Rows.Count; i++)
-                        {
-                            try
-                            {
-                                open = AllBuckets.Rows[i]["UDCodes_CodeDesc"].ToString().Split('.');
-                                light = AllBuckets.Rows[i]["UDCodes_LongDesc"].ToString().Split('.');
-                                cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(open[0]), Int16.Parse(open[1]));
-                                cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(light[0]), Int16.Parse(light[1]));
-                            }
-                            catch { }
-                        }
-                    }
-
-                    //-----------------------------------------------------------------                                                        
-                    //Lấy thông tin lệnh cân. K cần epicor
-                    dtChoose = SQL_Conn.SelectMO_V2(txtQRCode.Text.ToString());
-                    PartNum = dtChoose.Rows[0]["ChemicalOrderCode"].ToString();
-                    if (dtChoose.Rows.Count == 0)
-                    {
-                        msg error = new msg("Lệnh sản xuất đã hoàn thành.");
-                        error.TopMost = true;
-                        error.Show();
-                        txtQRCode.Text = "";
-                        txtQRCode.Clear();
-                        txtQRCode.Focus();
-                        txtQRCode.SelectAll();
-                    }
-                    else
-                    {
-                        if (!comport.IsOpen)
-                            COMOpen();
-                        //PLCOpen();
-                        if (dtChoose.Rows[0]["JobNo"].ToString().Substring(0, 3) == "JRR")
-                        {
-                            //* Lấy từ epicor                          
-                            //response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_RRCSTT?PartNum=" + PartNum).Result;
-                            //dtSortMateiral = GetDataTableFromJsonString(response.Content.ReadAsStringAsync().Result);
-
-                            quytrinh1 = true;
-                        }
-                        else
-                            quytrinh1 = false;
-
-                        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, client.BaseAddress + "ERP_LIVE/api/v1/Erp.BO.IssueReturnSvc/PerformMaterialMovement");
-                        response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_COH?JobNum=" + dtChoose.Rows[0]["JobNo"].ToString()).Result;                      
-                        while (response.IsSuccessStatusCode == false)
-                        {
-                            Thread.Sleep(3000);
-                            response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_COH?JobNum=" + dtChoose.Rows[0]["JobNo"].ToString()).Result;
-                        }
-                        dtCheckOnHand = GetDataTableFromJsonString(response.Content.ReadAsStringAsync().Result);
-
-                        Au = null;
-                        Total = null;
-                        soau = 1;
-                        Total_Temp = null;
-                        Stt_Temp = 0;
-                        Stt_Can_Temp = 0;
-                        Stt_Au_Temp = 1;
-                        QRCode = "";
-                        canquytrinh1_1 = false;
-                        autrung = false;
-                        aule = false;
-                        inlai = false;
-                        checkAu = false;
-                        stoptime = false;
-                        username = Error.User;
-                        for (int k = 0; k < dgCty.Columns.Count; k++)
-                        {
-                            dgCty.Columns[k].Visible = true;     //Hides Column
-                        }
-
-                        for (int k = 0; k < dgCty2.Columns.Count; k++)
-                        {
-                            dgCty2.Columns[k].Visible = true;     //Hides Column
-                        }
-
-                        for (int k = 0; k < dgCty3.Columns.Count; k++)
-                        {
-                            dgCty3.Columns[k].Visible = true;     //Hides  Column
-                        }
-
-                        for (int k = 0; k < dgCty4.Columns.Count; k++)
-                        {
-                            dgCty4.Columns[k].Visible = true;
-                        }
-                        dgCty.DataSource = null;
-                        dgCty2.DataSource = null;
-                        dgCty3.DataSource = null;
-                        dgCty4.DataSource = null;
-
-                        mo = txtQRCode.Text;
-                        btDongThung.Visible = true;
-                        btXacNhan.Visible = true;
-                        lbMaKeo.Visible = true;
-                        lbSoMe.Visible = true;
-                        lbSoKG.Visible = true;
-                        panelAu.Visible = true; //Hiện panel Âu để cân âu
-                        txtQRAu.SelectAll();
-
-                        //Lấy thông tin của lệnh vừa được chọn
-                        //Thêm epicor
-                        response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_JobInfo?JobNo=" + dtChoose.Rows[0]["JobNo"].ToString()).Result;
-                        while (response.IsSuccessStatusCode == false)
-                        {
-                            Thread.Sleep(3000);
-                            response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_JobInfo?JobNo=" + dtChoose.Rows[0]["JobNo"].ToString()).Result;
-                        }
-                        dtBuckets = GetDataTableFromJsonString(response.Content.ReadAsStringAsync().Result);
-
-                        //Lấy part description
-                        response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_GetPartD?PartNum=" + PartNum).Result;
-                        while (response.IsSuccessStatusCode == false)
-                        {
-                            Thread.Sleep(3000);
-                            response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_GetPartD?PartNum=" + PartNum).Result;
-                        }
-                        DataTable dtGetPartDesc = GetDataTableFromJsonString(response.Content.ReadAsStringAsync().Result);
-                        makeo = dtGetPartDesc.Rows[0]["Part_PartDescription"].ToString();
-                        SQL_Conn.updatePartName(txtQRCode.Text, makeo);
-
-                        //Lấy các thùng ở cân trạm 1 của Job này
-                        //Thêm epicor
-                        //dtAllBucketActive = SQL_Conn.SelectAllBucketActive(txtQRCode.Text.ToString());
-                        response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_AllBinPort1?JobNo=" + dtChoose.Rows[0]["JobNo"].ToString()).Result;
-                        while (response.IsSuccessStatusCode == false)
-                        {
-                            Thread.Sleep(3000);
-                            response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_AllBinPort1?JobNo=" + dtChoose.Rows[0]["JobNo"].ToString()).Result;
-                        }
-                        dtAllBucketActive = GetDataTableFromJsonString(response.Content.ReadAsStringAsync().Result);
-
-                        //Lấy thông tin đang cân. Không cần epicor
-                        dtChooseCTY = SQL_Conn.SelectCommandCTY_V2(txtQRCode.Text.ToString(), 1);
-                        dtMaterialDetail = SQL_Conn.SelectDetail_V2(txtQRCode.Text.ToString(), 1);
-                        MaterialTemp = SQL_Conn.SelectCommandTemp_V2(txtQRCode.Text.ToString(), 1);
-
-                        Au = new string[int.Parse(dtChoose.Rows[0]["BatchNo"].ToString()), 2]; //Khai báo số Âu theo lệnh điều động
-                        Total = new string[int.Parse(dtChoose.Rows[0]["BatchNo"].ToString()), 2]; //Khai báo tổng số lượng của từng âu
-
-                        //Gán dữ liệu để quét tiếp nếu bị lỗi cân khi đang quét
-                        for (int i = 0; i < MaterialTemp.Rows.Count; i++)
-                        {
-                            Au[i, 0] = MaterialTemp.Rows[i][1].ToString();
-                            Au[i, 1] = MaterialTemp.Rows[i][4].ToString();
-                            Total[i, 0] = MaterialTemp.Rows[i][1].ToString();
-                            if (quytrinh1)
-                                Total[i, 1] = 0.ToString();
-                            else
-                                Total[i, 1] = MaterialTemp.Rows[i][5].ToString();
-
-                            int AuNumber = int.Parse(MaterialTemp.Rows[i][2].ToString());
-                            string QRAu = MaterialTemp.Rows[i][1].ToString();
-                            if (AuNumber >= Stt_Au_Temp && QRAu != "")
-                            {
-                                Stt_Au_Temp = AuNumber + 1;
-                            }
-                        }
-
-                        //Gán thông tin keo mà tổng số âu
-                        lbSoKG.Text = "Số KG: " + dtChoose.Rows[0]["Weight"].ToString();
-                        lbMaKeo.Text = "Mã keo 1: " + makeo;
-
-                        if (!quytrinh1)
-                            lbSoMe.Text = "Tổng số hộp: " + dtChoose.Rows[0]["BatchNo"].ToString();
-                        else
-                            lbSoMe.Text = "Tổng số cây: " + dtChoose.Rows[0]["BatchNo"].ToString();
-
-                        //Mở timer 2 kiểm tra Âu
-                        timer2.Enabled = true;
-
-                        //Chạy thread để lấy dữ liệu từ cân
-                        a = new Thread(checkQRAu);
-                        a.IsBackground = true;
-                        a.Start();
-                    }
-                }
-            }
-            catch { }
+            
         }
 
         int show = 0;
@@ -2167,7 +1974,7 @@ namespace CanHoaChat
                     }
                 }
 
-                DataTable dt = SQL_Conn.CheckAll_V2(txtQRCode.Text.ToString());
+                DataTable dt = SQL_Conn.CheckAll_V2(cbMO.Text.ToString());
                 if (dt.Rows.Count == 0)
                 {
                     try
@@ -2177,12 +1984,11 @@ namespace CanHoaChat
                     }
                     catch { }
 
-                    lbMaKeo2.Visible = false;
                     lbMaKeo.Visible = false;
                     lbSoMe.Visible = false;
                     panelAu.Visible = false;
                     panelCan.Visible = false;
-                    SQL_Conn.updateCommand_V2(txtQRCode.Text); //Cập nhật hoàn thành 
+                    SQL_Conn.updateCommand_V2(cbMO.Text); //Cập nhật hoàn thành 
                     timer6.Enabled = false;
                     quytrinh1 = false;
                     stoptime = true; //Dừng cân                    
@@ -2358,7 +2164,6 @@ namespace CanHoaChat
                 DataTable dt = GetDataTableFromJsonString(response.Content.ReadAsStringAsync().Result);
                 if (txtJob.Text.Trim().Substring(0, 3) == "JRR" || txtJob.Text.Trim().Substring(0, 3) == "JCB" || txtJob.Text.Trim().Substring(0, 3) == "JOB")
                 {
-                    txtQRCode.ReadOnly = false;
                     DataTable dtJob = new DataTable();
                     dtJob = SQL_Conn.CheckJobStatus_V2(txtJob.Text.Trim());
                     if (dtJob.Rows.Count == 0)
@@ -2367,14 +2172,27 @@ namespace CanHoaChat
                         {
                             bool b = SQL_Conn.InsertJob_V2(dt);
                             if (b)
-                                MessageBox.Show("Tạo lệnh thành công");
-                            else
-                                MessageBox.Show("Lệnh đã được tạo trước đó");
+                            {
+                                DataTable dtMO = SQL_Conn.GetMOFromJob(job); 
+                                if(dtMO.Rows.Count > 0)
+                                {
+                                    cbMO.DataSource = dtMO;
+                                    cbMO.DisplayMember = "ManufactureOrderNo";
+                                    cbMO.ValueMember = "ManufactureOrderNo";
+                                    MessageBox.Show("Load mã cân thành công");
+                                }
+                                else
+                                {
+                                    MessageBox.Show("Job đã hoàn thành lệnh cân");
+                                    txtJob.Focus();
+                                    txtJob.SelectAll();
+                                }
+                            }
                         }
                         catch
                         {
                             txtJob.Text = "";
-                            MessageBox.Show("Lỗi kết nối tới epicor");
+                            MessageBox.Show("Lỗi kết nối tới server");
                         }
 
                     }
@@ -2461,6 +2279,213 @@ namespace CanHoaChat
                     }
                 }
 
+            }
+            catch { }
+        }
+
+        private void btStartCan_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (cbMO.Text.Length >= 13)
+                {
+                    if (a.IsAlive)
+                    {
+                        a.Abort();
+                    }
+                    //Get từ epicor từ số job lấy bin đang mở để đóng lại chạy job mới
+                    PLCOpen();
+
+                    var JobNoTB = SQL_Conn.SelectRunMO_V2();
+                    if (JobNoTB.Rows.Count > 0)
+                    {
+                        response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_AllBinInJob?JobNo=" + JobNoTB.Rows[0][0].ToString()).Result;
+
+                        while (response.IsSuccessStatusCode == false)
+                        {
+                            Thread.Sleep(3000);
+                            response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_AllBinInJob?JobNo=" + JobNoTB.Rows[0][0].ToString()).Result;
+                        }
+
+
+                        AllBuckets = GetDataTableFromJsonString(response.Content.ReadAsStringAsync().Result);
+                        for (int i = 0; i < AllBuckets.Rows.Count; i++)
+                        {
+                            try
+                            {
+                                open = AllBuckets.Rows[i]["UDCodes_CodeDesc"].ToString().Split('.');
+                                light = AllBuckets.Rows[i]["UDCodes_LongDesc"].ToString().Split('.');
+                                cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(open[0]), Int16.Parse(open[1]));
+                                cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(light[0]), Int16.Parse(light[1]));
+                            }
+                            catch { }
+                        }
+                    }
+
+                    //-----------------------------------------------------------------                                                        
+                    //Lấy thông tin lệnh cân. K cần epicor
+                    dtChoose = SQL_Conn.SelectMO_V2(cbMO.Text.ToString());
+                    PartNum = dtChoose.Rows[0]["ChemicalOrderCode"].ToString();
+                    if (dtChoose.Rows.Count == 0)
+                    {
+                        msg error = new msg("Lệnh sản xuất đã hoàn thành.");
+                        error.TopMost = true;
+                        error.Show();
+                        cbMO.Text = "";
+                        cbMO.Focus();
+                        cbMO.SelectAll();
+                    }
+                    else
+                    {
+                        if (!comport.IsOpen)
+                            COMOpen();
+
+                        PLCOpen();
+                        if (dtChoose.Rows[0]["JobNo"].ToString().Substring(0, 3) == "JRR")
+                        {
+                            //* Lấy từ epicor                          
+                            //response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_RRCSTT?PartNum=" + PartNum).Result;
+                            //dtSortMateiral = GetDataTableFromJsonString(response.Content.ReadAsStringAsync().Result);
+
+                            quytrinh1 = true;
+                        }
+                        else
+                            quytrinh1 = false;
+
+                        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, client.BaseAddress + "ERP_LIVE/api/v1/Erp.BO.IssueReturnSvc/PerformMaterialMovement");
+                        response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_COH?JobNum=" + dtChoose.Rows[0]["JobNo"].ToString()).Result;
+                        while (response.IsSuccessStatusCode == false)
+                        {
+                            Thread.Sleep(3000);
+                            response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_COH?JobNum=" + dtChoose.Rows[0]["JobNo"].ToString()).Result;
+                        }
+                        dtCheckOnHand = GetDataTableFromJsonString(response.Content.ReadAsStringAsync().Result);
+
+                        Au = null;
+                        Total = null;
+                        soau = 1;
+                        Total_Temp = null;
+                        Stt_Temp = 0;
+                        Stt_Can_Temp = 0;
+                        Stt_Au_Temp = 1;
+                        QRCode = "";
+                        canquytrinh1_1 = false;
+                        autrung = false;
+                        aule = false;
+                        inlai = false;
+                        checkAu = false;
+                        stoptime = false;
+                        username = Error.User;
+                        for (int k = 0; k < dgCty.Columns.Count; k++)
+                        {
+                            dgCty.Columns[k].Visible = true;     //Hides Column
+                        }
+
+                        for (int k = 0; k < dgCty2.Columns.Count; k++)
+                        {
+                            dgCty2.Columns[k].Visible = true;     //Hides Column
+                        }
+
+                        for (int k = 0; k < dgCty3.Columns.Count; k++)
+                        {
+                            dgCty3.Columns[k].Visible = true;     //Hides  Column
+                        }
+
+                        for (int k = 0; k < dgCty4.Columns.Count; k++)
+                        {
+                            dgCty4.Columns[k].Visible = true;
+                        }
+                        dgCty.DataSource = null;
+                        dgCty2.DataSource = null;
+                        dgCty3.DataSource = null;
+                        dgCty4.DataSource = null;
+
+                        mo = cbMO.Text;
+                        btDongThung.Visible = true;
+                        btXacNhan.Visible = true;
+                        lbMaKeo.Visible = true;
+                        lbSoMe.Visible = true;
+                        lbSoKG.Visible = true;
+                        panelAu.Visible = true; //Hiện panel Âu để cân âu
+                        txtQRAu.SelectAll();
+
+                        //Lấy thông tin của lệnh vừa được chọn
+                        //Thêm epicor
+                        response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_JobInfo?JobNo=" + dtChoose.Rows[0]["JobNo"].ToString()).Result;
+                        while (response.IsSuccessStatusCode == false)
+                        {
+                            Thread.Sleep(3000);
+                            response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_JobInfo?JobNo=" + dtChoose.Rows[0]["JobNo"].ToString()).Result;
+                        }
+                        dtBuckets = GetDataTableFromJsonString(response.Content.ReadAsStringAsync().Result);
+
+                        //Lấy part description
+                        response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_GetPartD?PartNum=" + PartNum).Result;
+                        while (response.IsSuccessStatusCode == false)
+                        {
+                            Thread.Sleep(3000);
+                            response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_GetPartD?PartNum=" + PartNum).Result;
+                        }
+                        DataTable dtGetPartDesc = GetDataTableFromJsonString(response.Content.ReadAsStringAsync().Result);
+                        makeo = dtGetPartDesc.Rows[0]["Part_PartDescription"].ToString();
+                        SQL_Conn.updatePartName(cbMO.Text, makeo);
+
+                        //Lấy các thùng ở cân trạm 1 của Job này
+                        //Thêm epicor
+                        //dtAllBucketActive = SQL_Conn.SelectAllBucketActive(txtQRCode.Text.ToString());
+                        response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_AllBinPort1?JobNo=" + dtChoose.Rows[0]["JobNo"].ToString()).Result;
+                        while (response.IsSuccessStatusCode == false)
+                        {
+                            Thread.Sleep(3000);
+                            response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_AllBinPort1?JobNo=" + dtChoose.Rows[0]["JobNo"].ToString()).Result;
+                        }
+                        dtAllBucketActive = GetDataTableFromJsonString(response.Content.ReadAsStringAsync().Result);
+
+                        //Lấy thông tin đang cân. Không cần epicor
+                        dtChooseCTY = SQL_Conn.SelectCommandCTY_V2(cbMO.Text.ToString(), 1);
+                        dtMaterialDetail = SQL_Conn.SelectDetail_V2(cbMO.Text.ToString(), 1);
+                        MaterialTemp = SQL_Conn.SelectCommandTemp_V2(cbMO.Text.ToString(), 1);
+
+                        Au = new string[int.Parse(dtChoose.Rows[0]["BatchNo"].ToString()), 2]; //Khai báo số Âu theo lệnh điều động
+                        Total = new string[int.Parse(dtChoose.Rows[0]["BatchNo"].ToString()), 2]; //Khai báo tổng số lượng của từng âu
+
+                        //Gán dữ liệu để quét tiếp nếu bị lỗi cân khi đang quét
+                        for (int i = 0; i < MaterialTemp.Rows.Count; i++)
+                        {
+                            Au[i, 0] = MaterialTemp.Rows[i][1].ToString();
+                            Au[i, 1] = MaterialTemp.Rows[i][4].ToString();
+                            Total[i, 0] = MaterialTemp.Rows[i][1].ToString();
+                            if (quytrinh1)
+                                Total[i, 1] = 0.ToString();
+                            else
+                                Total[i, 1] = MaterialTemp.Rows[i][5].ToString();
+
+                            int AuNumber = int.Parse(MaterialTemp.Rows[i][2].ToString());
+                            string QRAu = MaterialTemp.Rows[i][1].ToString();
+                            if (AuNumber >= Stt_Au_Temp && QRAu != "")
+                            {
+                                Stt_Au_Temp = AuNumber + 1;
+                            }
+                        }
+
+                        //Gán thông tin keo mà tổng số âu
+                        lbSoKG.Text = "Số KG: " + dtChoose.Rows[0]["Weight"].ToString();
+                        lbMaKeo.Text = "Mã keo 1: " + makeo;
+
+                        if (!quytrinh1)
+                            lbSoMe.Text = "Tổng số hộp: " + dtChoose.Rows[0]["BatchNo"].ToString();
+                        else
+                            lbSoMe.Text = "Tổng số cây: " + dtChoose.Rows[0]["BatchNo"].ToString();
+
+                        //Mở timer 2 kiểm tra Âu
+                        timer2.Enabled = true;
+
+                        //Chạy thread để lấy dữ liệu từ cân
+                        a = new Thread(checkQRAu);
+                        a.IsBackground = true;
+                        a.Start();
+                    }
+                }
             }
             catch { }
         }

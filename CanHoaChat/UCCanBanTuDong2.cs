@@ -324,7 +324,7 @@ namespace CanHoaChat
                 if (!comport.IsOpen)
                     COMOpen();
 
-                //PLCOpen();
+                PLCOpen();
 
                 timeout = 0;
                 run = 1;
