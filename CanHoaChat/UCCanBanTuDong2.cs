@@ -65,6 +65,7 @@ namespace CanHoaChat
 
             return JsonConvert.DeserializeObject<DataTable>(trgArray.ToString());
         }
+
         public UCCanBanTuDong2()
         {
             InitializeComponent();
@@ -96,12 +97,21 @@ namespace CanHoaChat
         string result = "";
         bool can = false;
         bool choqua = false;
+        bool bh2 = false;
         double ActualKG = 0;
         private void CanBanTuDong2_Load(object sender, EventArgs e)
         {
             StreamReader sr = new StreamReader("ComCan2.txt");
             ComName = sr.ReadLine().Trim();
             sr.Close();
+
+            sr = new StreamReader("Location.txt");
+            if (sr.ReadLine().Trim() == "BH2")
+            {
+                bh2 = true;
+            }
+            else
+                bh2 = false;
 
             this.MaximumSize = new Size(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
             this.Size = this.MaximumSize;
@@ -122,7 +132,7 @@ namespace CanHoaChat
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.
                 MediaTypeWithQualityHeaderValue("application/json"));
-            var byteArray = Encoding.ASCII.GetBytes($"{"itdev"}:{"P@ssw0rd123"}");
+            var byteArray = Encoding.ASCII.GetBytes($"{"CAN"}:{"Es@2020"}");
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
 
             COMOpen();
@@ -310,7 +320,7 @@ namespace CanHoaChat
         private void timer1_Tick(object sender, EventArgs e)
         {
             //Lấy CBK
-            dtChoose = SQL_Conn.SelectMOActive_V2();
+            dtChoose = SQL_Conn.SelectMOActive_V2(bh2);
 
             if (run == 0 && dtChoose.Rows.Count > 0)
             {
@@ -324,7 +334,7 @@ namespace CanHoaChat
                 if (!comport.IsOpen)
                     COMOpen();
 
-                PLCOpen();
+                //PLCOpen();
 
                 timeout = 0;
                 run = 1;

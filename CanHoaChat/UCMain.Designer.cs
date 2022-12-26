@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.mCanBanTuDong = new MetroFramework.Controls.MetroTile();
             this.metroTile1 = new MetroFramework.Controls.MetroTile();
             this.metroTile2 = new MetroFramework.Controls.MetroTile();
@@ -36,6 +37,7 @@
             this.lbError = new MetroFramework.Controls.MetroLabel();
             this.metroButton1 = new MetroFramework.Controls.MetroButton();
             this.txtQRNV = new MetroFramework.Controls.MetroTextBox();
+            this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.pCheckNV.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -172,6 +174,12 @@
             this.txtQRNV.WaterMarkColor = System.Drawing.Color.FromArgb(((int)(((byte)(109)))), ((int)(((byte)(109)))), ((int)(((byte)(109)))));
             this.txtQRNV.WaterMarkFont = new System.Drawing.Font("Segoe UI", 14F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Pixel);
             this.txtQRNV.TextChanged += new System.EventHandler(this.txtQRNV_TextChanged);
+            this.txtQRNV.Click += new System.EventHandler(this.txtQRNV_Click);
+            // 
+            // timer1
+            // 
+            this.timer1.Interval = 1000;
+            this.timer1.Tick += new System.EventHandler(this.timer1_Tick_1);
             // 
             // UCMain
             // 
@@ -202,5 +210,6 @@
         private MetroFramework.Controls.MetroButton metroButton1;
         private MetroFramework.Controls.MetroTextBox txtQRNV;
         private MetroFramework.Controls.MetroLabel lbError;
+        private System.Windows.Forms.Timer timer1;
     }
 }

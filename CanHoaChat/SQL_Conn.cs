@@ -74,6 +74,39 @@ namespace CanHoaChat
             }
 
         }
+
+        public static DataTable CheckNV_V2(string empid)
+        {
+            string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
+            //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("sp_CanDien_V2", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                     new SqlParameter("@empid", empid));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@type", "CheckNV"));
+                    SqlDataReader sdr = cmd.ExecuteReader();
+                    DataTable dt = new DataTable();
+                    dt.Load(sdr);
+                    return dt;
+                }
+                catch (Exception ex)
+                {
+                    return new DataTable();
+                }
+                finally
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        conn.Close();
+                }
+            }
+        }
+
         public static DataTable CheckPrint_V2(string mo)
         {
             string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
@@ -138,7 +171,7 @@ namespace CanHoaChat
             }
 
         }
-        public static DataTable SelectRunMO_V2()
+        public static DataTable SelectRunMO_V2(bool bh2)
         {
             string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
             //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
@@ -149,6 +182,8 @@ namespace CanHoaChat
                     conn.Open();
                     SqlCommand cmd = new SqlCommand("sp_CanDien_V2", conn);
                     cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                     new SqlParameter("@bh2", bh2));
                     cmd.Parameters.Add(
                       new SqlParameter("@type", "SelectRunMO"));
                     SqlDataReader sdr = cmd.ExecuteReader();
@@ -168,25 +203,34 @@ namespace CanHoaChat
             }
 
         }
-        public static bool InsertJob_V2(DataTable dt)
-        {
+        public static bool InsertJob_V2(DataTable dt, bool bh2)
+        {          
             string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
             string PartNum = dt.Rows[0]["JobHead_PartNum"].ToString();
             string JobNo = dt.Rows[0]["JobMtl_JobNum"].ToString();
-            Double weight = Double.Parse(dt.Rows[0]["JobHead_ProdQty"].ToString());
+
+            Double weight = Double.Parse(dt.Rows[0]["JobHead_ProdQty"].ToString()); 
+            if (dt.Rows[0]["JobMtl2_QtyPer"].ToString() != "")
+                weight = Double.Parse(dt.Rows[0]["JobHead_ProdQty"].ToString()) * (1 - Double.Parse(dt.Rows[0]["JobMtl2_QtyPer"].ToString()));
+
+            Double Qty1Mix = 25;
+            if(dt.Rows[0]["UDCodes6_LongDesc"].ToString() != "")
+                Qty1Mix = Double.Parse(dt.Rows[0]["UDCodes6_LongDesc"].ToString());
 
             dt.Columns.Remove("JobHead_ProdQty");
             dt.Columns.Remove("JobMtl_IUM");
             dt.Columns.Remove("JobHead_PartNum");
             dt.Columns.Remove("Part_PartDescription");
             dt.Columns.Remove("JobMtl_Description");
+            dt.Columns.Remove("UDCodes6_LongDesc");
+            dt.Columns.Remove("JobMtl2_QtyPer");
             dt.Columns.Remove("RowIdent");
             dt.Columns.Add("BinType");
             dt.Columns["JobMtl_JobNum"].ColumnName = "JobNo";
             dt.Columns["JobMtl_PartNum"].ColumnName = "PartNum";
             dt.Columns["JobMtl_RequiredQty"].ColumnName = "weight";
             dt.Columns["UDCodes1_CodeID"].ColumnName = "ZoneNum";
-            dt.Columns["UDCodes5_CodeDesc"].ColumnName = "AuNumber";
+            dt.Columns["Calculated_AuNumber"].ColumnName = "AuNumber";
             dt.AcceptChanges();
             using (var conn = new SqlConnection(ConnectionString))
             {
@@ -203,6 +247,15 @@ namespace CanHoaChat
                         new SqlParameter("@JobNo", JobNo));
                     cmd.Parameters.Add(
                        new SqlParameter("@Weight", weight));
+                    cmd.Parameters.Add(
+                       new SqlParameter("@Qty1Mix", Qty1Mix));
+
+                    if (bh2)
+                        cmd.Parameters.Add(
+                            new SqlParameter("@BH2", 1));
+                    else
+                        cmd.Parameters.Add(
+                            new SqlParameter("@BH2", 0));
                     cmd.Parameters.Add(
                       new SqlParameter("@type", "DieuDong"));
 
@@ -255,7 +308,7 @@ namespace CanHoaChat
                 }
             }
         }
-        public static DataTable SelectMOActive_V2()
+        public static DataTable SelectMOActive_V2(bool bh2)
         {
             string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
             //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
@@ -266,6 +319,8 @@ namespace CanHoaChat
                     conn.Open();
                     SqlCommand cmd = new SqlCommand("sp_CanDien_V2", conn);
                     cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                      new SqlParameter("@bh2", bh2));
                     cmd.Parameters.Add(
                       new SqlParameter("@type", "SelectMOActive"));
                     SqlDataReader sdr = cmd.ExecuteReader();
@@ -450,6 +505,40 @@ namespace CanHoaChat
                 }
             }
 
+        }
+
+        public static bool updateMOLocation(string ManufactureOrderNo, bool bh2)
+        {
+            string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
+            //string ConnectionString = @"Data Source = 198.1.1.95; Initial Catalog = JianDaMES; User ID = kendakv2; Password = kenda123";
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("sp_CanDien_V2", conn);
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(
+                      new SqlParameter("@MO", ManufactureOrderNo));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@BH2", bh2));
+                    cmd.Parameters.Add(
+                      new SqlParameter("@type", "UpdateMOLocation"));
+
+                    int effectedRow = cmd.ExecuteNonQuery();
+                    return effectedRow > 0;
+                }
+                catch (Exception ex)
+                {
+
+                    return false;
+                }
+                finally
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        conn.Close();
+                }
+            }
         }
         public static bool updateAuTemp_V2(string ManufactureOrderNo, string AuTareWeight, string QRAu, string soau, int MachineNo)
         {

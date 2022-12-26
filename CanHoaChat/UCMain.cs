@@ -85,53 +85,7 @@ namespace CanHoaChat
 
         private void txtQRNV_TextChanged(object sender, EventArgs e)
         {
-            if(txtQRNV.Text.Length >= 5)
-            {
-                DataTable dt = SQL_Conn.CheckNV(txtQRNV.Text);
-                if (dt.Rows.Count > 0)
-                {
-                    FormUsed.FormNow = "";
-                    Thread.Sleep(2000);
-                    lbError.Text = "";
-                    pCheckNV.Visible = false;
-                    Form1.Instance.MetroContainer.Controls.Clear();
-                    if (MoThung == true)
-                    {                       
-                        if (!Form1.Instance.MetroContainer.Controls.ContainsKey("UCCanTuDong"))
-                        {
-                            UCCanTuDong uc = new UCCanTuDong();
-                            uc.Dock = DockStyle.Fill;
-                            Form1.Instance.MetroContainer.Controls.Add(uc);
-                            Form1.Instance.MetroBack.Visible = true;
-                        }
-                    }
-
-                    if (CanTram1 == true)
-                    {
-                        PictureBox myform1textbox1 = (Form1.Instance.Controls["pbTram"] as PictureBox);
-                        myform1textbox1.Image = Image.FromFile("1.png");
-                        myform1textbox1.Visible = true;
-                        if (!Form1.Instance.MetroContainer.Controls.ContainsKey("UCCanBanTuDong"))
-                        {
-                            UCCanBanTuDong uc = new UCCanBanTuDong();
-                            uc.Dock = DockStyle.Fill;
-                            Form1.Instance.MetroContainer.Controls.Add(uc);
-                            Form1.Instance.MetroBack.Visible = true;
-                        }
-                    }
-
-                    Error.User = txtQRNV.Text;
-                    txtQRNV.Text = "";
-                }
-                else
-                {
-                    txtQRNV.Text = "";
-                    txtQRNV.Clear();
-                    txtQRNV.Focus();
-                    txtQRNV.SelectAll();
-                    lbError.Text = "Số thẻ không có quyền truy cập";
-                }
-            }
+            timer1.Enabled = true;
         }
 
         private void metroButton1_Click(object sender, EventArgs e)
@@ -155,6 +109,73 @@ namespace CanHoaChat
         private void button2_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void txtQRNV_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        int dem = 0;
+        private void timer1_Tick_1(object sender, EventArgs e)
+        {
+            dem += 1;
+            if(dem == 2)
+            {
+                timer1.Enabled = false;
+                if (txtQRNV.Text.Length >= 4)
+                {
+                    DataTable dt;
+                    if (txtQRNV.Text.Length == 4)
+                        dt = SQL_Conn.CheckNV("0" + txtQRNV.Text);
+                    else
+                        dt = SQL_Conn.CheckNV(txtQRNV.Text);
+
+                    if (dt.Rows.Count > 0)
+                    {
+                        FormUsed.FormNow = "";
+                        Thread.Sleep(2000);
+                        lbError.Text = "";
+                        pCheckNV.Visible = false;
+                        Form1.Instance.MetroContainer.Controls.Clear();
+                        if (MoThung == true)
+                        {
+                            if (!Form1.Instance.MetroContainer.Controls.ContainsKey("UCCanTuDong"))
+                            {
+                                UCCanTuDong uc = new UCCanTuDong();
+                                uc.Dock = DockStyle.Fill;
+                                Form1.Instance.MetroContainer.Controls.Add(uc);
+                                Form1.Instance.MetroBack.Visible = true;
+                            }
+                        }
+
+                        if (CanTram1 == true)
+                        {
+                            PictureBox myform1textbox1 = (Form1.Instance.Controls["pbTram"] as PictureBox);
+                            myform1textbox1.Image = Image.FromFile("1.png");
+                            myform1textbox1.Visible = true;
+                            if (!Form1.Instance.MetroContainer.Controls.ContainsKey("UCCanBanTuDong"))
+                            {
+                                UCCanBanTuDong uc = new UCCanBanTuDong();
+                                uc.Dock = DockStyle.Fill;
+                                Form1.Instance.MetroContainer.Controls.Add(uc);
+                                Form1.Instance.MetroBack.Visible = true;
+                            }
+                        }
+
+                        Error.User = txtQRNV.Text;
+                        txtQRNV.Text = "";
+                    }
+                    else
+                    {
+                        txtQRNV.Text = "";
+                        txtQRNV.Clear();
+                        txtQRNV.Focus();
+                        txtQRNV.SelectAll();
+                        lbError.Text = "Số thẻ không có quyền truy cập";
+                    }
+                }
+            }           
         }
     }
 }
