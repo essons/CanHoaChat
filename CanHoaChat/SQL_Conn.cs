@@ -72,7 +72,6 @@ namespace CanHoaChat
                         conn.Close();
                 }
             }
-
         }
 
         public static DataTable CheckNV_V2(string empid)
@@ -208,14 +207,23 @@ namespace CanHoaChat
             string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";
             string PartNum = dt.Rows[0]["JobHead_PartNum"].ToString();
             string JobNo = dt.Rows[0]["JobMtl_JobNum"].ToString();
-
-            Double weight = Double.Parse(dt.Rows[0]["JobHead_ProdQty"].ToString()); 
+            double Rate = 1;
+            Double weight = Double.Parse(dt.Rows[0]["JobHead_ProdQty"].ToString());
             if (dt.Rows[0]["JobMtl2_QtyPer"].ToString() != "")
+            {
                 weight = Double.Parse(dt.Rows[0]["JobHead_ProdQty"].ToString()) * (1 - Double.Parse(dt.Rows[0]["JobMtl2_QtyPer"].ToString()));
-
+                Rate = 1 - Double.Parse(dt.Rows[0]["JobMtl2_QtyPer"].ToString());
+            }
             Double Qty1Mix = 25;
             if(dt.Rows[0]["UDCodes6_LongDesc"].ToString() != "")
                 Qty1Mix = Double.Parse(dt.Rows[0]["UDCodes6_LongDesc"].ToString());
+
+            for(int i = 0; i < dt.Rows.Count;i++)
+            {
+                var a = double.Parse(dt.Rows[i]["JobMtl_RequiredQty"].ToString()) * Rate;
+                var b = Math.Round(a, 3);
+                dt.Rows[i]["JobMtl_RequiredQty"] = Math.Round(a,3);
+            }
 
             dt.Columns.Remove("JobHead_ProdQty");
             dt.Columns.Remove("JobMtl_IUM");
@@ -506,7 +514,6 @@ namespace CanHoaChat
             }
 
         }
-
         public static bool updateMOLocation(string ManufactureOrderNo, bool bh2)
         {
             string ConnectionString = @"Data Source=SRV-DB-02\SQLEXPRESS;Initial Catalog=CBK;User ID=sa;Password=Es@2020";

@@ -24,6 +24,7 @@ using System.Net.Security;
 using System.Net.Http;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using System.Printing;
 
 namespace CanHoaChat
 {
@@ -58,15 +59,23 @@ namespace CanHoaChat
             Issued = r[0]["Calculated_SumQty"].ToString();
             REQCHE = double.Parse(r[0]["JobMtl_RequiredQty"].ToString());
             JobMtl_MtlSeq = int.Parse(r[0]["JobMtl_MtlSeq"].ToString());
-            foreach (var ir in r)
-            {
-                //REALISSUE = REALISSUE / 1000;
-                REALONHAND = double.Parse(ir["PartBin_OnhandQty"].ToString());
-                LOTNO = ir["PartBin_LotNum"].ToString();
-                BINNUM = ir["PartBin_BinNum"].ToString();
-                WAREHOUSECODE = ir["PartBin_WarehouseCode"].ToString();
 
-                var json = @"{
+            if (r.Length > 0)
+                foreach (var ir in r)
+                {
+                    //REALISSUE = REALISSUE / 1000;
+                    REALONHAND = double.Parse(ir["PartBin_OnhandQty"].ToString());
+                    LOTNO = ir["PartBin_LotNum"].ToString();
+                    BINNUM = ir["PartBin_BinNum"].ToString();
+                    WAREHOUSECODE = ir["PartBin_WarehouseCode"].ToString();
+
+                    if (REALONHAND == 0)
+                    {
+                        //Số kg của lot trong thùng không đủ issue
+                        break;
+                    }
+
+                    var json = @"{
                                 ""plNegQtyAction"": true,
                                 ""ds"": {
                                 ""IssueReturn"": [
@@ -144,21 +153,25 @@ namespace CanHoaChat
                                 }
                               }";
 
-                request = new HttpRequestMessage(HttpMethod.Post, client.BaseAddress + "ERP_LIVE/api/v1/Erp.BO.IssueReturnSvc/PerformMaterialMovement");
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-                response = client.SendAsync(request).Result;
+                    request = new HttpRequestMessage(HttpMethod.Post, client.BaseAddress + "ERP_LIVE/api/v1/Erp.BO.IssueReturnSvc/PerformMaterialMovement");
+                    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                    response = client.SendAsync(request).Result;
 
-                /* Nếu đủ thì trừ onhand chưa đủ thì set onhand lot này = 0 chuyển sang lot tiếp theo */
-                if (REALONHAND >= REALISSUE)
-                {
-                    ir["PartBin_OnhandQty"] = ((REALONHAND * 1000 - REALISSUE)).ToString();
-                    break;
+                    /* Nếu đủ thì trừ onhand chưa đủ thì set onhand lot này = 0 chuyển sang lot tiếp theo */
+                    if (REALONHAND >= REALISSUE)
+                    {
+                        ir["PartBin_OnhandQty"] = ((REALONHAND * 1000 - REALISSUE)).ToString();
+                        break;
+                    }
+                    else
+                    {
+                        REALISSUE = REALISSUE - REALONHAND * 1000;
+                    }
+                    /*-------------------------------------------------  */
                 }
-                else
-                {
-                    REALISSUE = REALISSUE - REALONHAND * 1000;
-                }
-                /*-------------------------------------------------  */
+            else
+            {
+                //Không có onhand trong binnum
             }
         }
 
@@ -254,16 +267,60 @@ namespace CanHoaChat
             catch { }
 
             client = new HttpClient(handler);
-            client.BaseAddress = new Uri("https://srv-epi-app/");
+            client.BaseAddress = new Uri("https://srv-epi-app.essons.vn/");
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.
                 MediaTypeWithQualityHeaderValue("application/json"));
             var byteArray = Encoding.ASCII.GetBytes($"{"CAN"}:{"Es@2020"}");
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
+            //response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_JobInfo?JobNo=JOB00022232").Result;
+            //var dt = GetDataTableFromJsonString(response.Content.ReadAsStringAsync().Result);
 
             cbMO.Text = "";
             txtJob.Focus();
             txtJob.SelectAll();
+            PrintSystemJobInfo job;
+            var c = TryFindJob("document", out job);
+            while (c == true)
+            {
+                DialogResult dialogResult = MessageBox.Show("Kiểm tra lại máy in. Còn lệnh chưa in được", "Lỗi máy in", MessageBoxButtons.OK);
+                if (dialogResult == DialogResult.OK)
+                {
+                    //do something
+                    Thread.Sleep(3000);
+                    c = TryFindJob("document", out job);
+                }
+            }
+
+            //test();
+        }
+
+        public bool TryFindJob(string searchString, out PrintSystemJobInfo actualJob)
+        {
+            var myPrintServer = new PrintServer(printerName);
+
+            actualJob = null;
+            var myPrintQueues = myPrintServer.GetPrintQueues();
+            foreach (PrintQueue pq in myPrintQueues)
+            {
+                pq.Refresh();
+                if (pq.FullName == printerName)
+                {
+                    var jobs = pq.GetPrintJobInfoCollection();
+                    foreach (PrintSystemJobInfo job in jobs)
+                    {
+                        if (job.JobName.Contains(searchString) || job.Name.Contains(searchString))
+                        {
+                            if (job.IsOffline || job.IsInError || job.IsPaperOut)
+                            {
+                                actualJob = job;
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
         }
 
         double ActualKG = 0;
@@ -340,27 +397,34 @@ namespace CanHoaChat
                 timeout = 0;
                 //Lấy dữ liệu từ cổng COM chuyển sang string
                 strData = comport.ReadExisting().ToString();
-                
+
                 if (strData.Length >= 17)
                 {
                     //Lấy trọng lượng hóa chất đã cân trong âu và trọng lượng âu
                     double LastWeight = 0;
                     double AuWeight = 0;
-                    if (!quytrinh1)
+                    AuWeight = Convert.ToDouble(Au[aunumber - 1, 1]);
+                    try
                     {
                         LastWeight = Convert.ToDouble(dtMaterialDetail.Compute("SUM(RealWeight)", "AuNumber = " + aunumber.ToString()));
-                        AuWeight = Convert.ToDouble(Au[aunumber - 1, 1]);
-                    }                  
+                    }
+                    catch
+                    {
+                        LastWeight = 0;
+                    }
+
                     //strData2 = strData.Substring(7, strData.Length - 7);
-                    if(!bh2)
+                    if (!bh2)
                     {
                         strData2 = strData.Substring(strData.Length - 17, 10);
                         dResult = Convert.ToDouble(strData2);
-                    }                        
+                    }
                     else
                     {
-                        strData2 = strData.Substring(strData.Length - 12, 7);
-                        dResult = Convert.ToDouble(strData2) * 1000;
+                        strData2 = strData.Substring(strData.Length - 17, 10);
+                        dResult = Convert.ToDouble(strData2);
+                        //strData2 = strData.Substring(strData.Length - 12, 7);
+                        //dResult = Convert.ToDouble(strData2) * 1000;
                     }
 
                     if (dResult >= 0)
@@ -374,8 +438,14 @@ namespace CanHoaChat
                             txtKG.WaterMark = "0";
                     }
                     //Lấy xác suất lệch cho phép là 0.5%
-                    var minKG = (Double.Parse(kg) - (Double.Parse(kg) / 100 / 2));
-                    var maxKG = (Double.Parse(kg) + (Double.Parse(kg) / 100 / 2));
+                    var minKG = Math.Round((Double.Parse(kg) - (Double.Parse(kg) / 100 / 2)), 3);
+                    var maxKG = Math.Round((Double.Parse(kg) + (Double.Parse(kg) / 100 / 2)), 3);
+
+                    if(minKG <= 0.1)
+                        minKG = Math.Round((Double.Parse(kg) - (Double.Parse(kg) / 100 * 10)), 3);
+                    if(maxKG <= 0.1)
+                        maxKG = Math.Round((Double.Parse(kg) - (Double.Parse(kg) / 100 * 10)), 3);
+
                     ActualKG = dResult - AuWeight - LastWeight;
                     ActualKG = Math.Round(ActualKG, 3);
                     if (ActualKG >= minKG && ActualKG <= maxKG)
@@ -386,7 +456,6 @@ namespace CanHoaChat
                             this.Invoke
                                 (d, new object[] { soau.ToString() });
                         }
-
 
                         //choqua = true;
                         return "OK";
@@ -432,8 +501,13 @@ namespace CanHoaChat
                 dResult = Math.Round(dResult, 3);
                 if (dResult > 0)
                     txtCanAu.WaterMark = dResult.ToString();
-                if (dResult > 0)
+
+                if (dResult >= 100 && dResult <= 130)
                     return "OK";
+                else
+                    return "Fail";
+
+
             }
             catch (Exception ex)
             {
@@ -453,36 +527,32 @@ namespace CanHoaChat
 
             var totalAu = dtMaterialDetail.Select("AuNumber = Max(AuNumber)");
             totalAunumber = int.Parse(totalAu[0]["AuNumber"].ToString());
-            for (int i = 0; i < AllBuckets.Rows.Count; i++)
+            //for (int i = 0; i < AllBuckets.Rows.Count; i++)
+            //{
+            //    try
+            //    {
+            //        open = AllBuckets.Rows[i]["UDCodes_CodeDesc"].ToString().Split('.');
+            //        light = AllBuckets.Rows[i]["UDCodes_LongDesc"].ToString().Split('.');
+            //        cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(open[0]), Int16.Parse(open[1]));
+            //        cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(light[0]), Int16.Parse(light[1]));
+            //    }
+            //    catch { }
+            //}
+
+            for (int k = 0; k < dtAllBucketActive.Rows.Count; k++)
             {
                 try
                 {
-                    open = AllBuckets.Rows[i]["UDCodes_CodeDesc"].ToString().Split('.');
-                    light = AllBuckets.Rows[i]["UDCodes_LongDesc"].ToString().Split('.');
-                    cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(open[0]), Int16.Parse(open[1]));
-                    cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(light[0]), Int16.Parse(light[1]));
+                    light = dtAllBucketActive.Rows[k]["UDCodes_LongDesc"].ToString().Split('.');
+                    cJ2Compolet1.ForceSet(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(light[0]), Int16.Parse(light[1]));
                 }
                 catch { }
             }
 
             for (int i = 0; i < dtMaterialDetail.Rows.Count; i++)
             {
-                //Nếu cân rồi thì chuyển sang chất tiếp theo
-                if (dtMaterialDetail.Rows[i]["ChemStatus"].ToString() == "1" || dtMaterialDetail.Rows[i]["MachineNo"].ToString() == "2")
-                    continue;
-
-                for (int k = 0; k < dtAllBucketActive.Rows.Count; k++)
-                {
-                    try
-                    {
-                        light = dtAllBucketActive.Rows[k]["UDCodes_LongDesc"].ToString().Split('.');
-                        cJ2Compolet1.ForceSet(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(light[0]), Int16.Parse(light[1]));
-                    }
-                    catch { }
-                }
-
                 MaterialCode = dtMaterialDetail.Rows[i]["MaterialCode"].ToString();
-                //Set den, mo thung plc    
+                //Lấy dữ liệu plc đèn, mở thùng
                 try
                 {
                     var row = dtAllBucketActive.Select("Part_PartNum = '" + MaterialCode + "'");
@@ -495,6 +565,25 @@ namespace CanHoaChat
                 }
                 catch { }
 
+                //Nếu cân rồi thì chuyển sang chất tiếp theo
+                if (dtMaterialDetail.Rows[i]["ChemStatus"].ToString() == "1" || dtMaterialDetail.Rows[i]["MachineNo"].ToString() == "2")
+                {
+                    if (dtMaterialDetail.Rows[i]["ChemStatus"].ToString() == "1")
+                    {
+                        try
+                        {
+                            cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(light[0]), Int16.Parse(light[1]));
+                        }
+                        catch
+                        {
+
+                        }
+                    }
+                    continue;
+                }
+
+
+                //Set mo thung plc    
                 try
                 {
                     cJ2Compolet1.ForceSet(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(open[0]), Int16.Parse(open[1]));
@@ -554,9 +643,6 @@ namespace CanHoaChat
                             (d, new object[] { dtMaterialDetail.Rows[i]["AuNumber"].ToString() });
                     }
 
-
-
-
                     for (int u = 0; ; u++)
                     {
                         if (choqua == true && result == "OK")
@@ -608,7 +694,7 @@ namespace CanHoaChat
                         {
                             dongthung = false;
                             //Disable dong thung button
-                            if(!bh2)
+                            if (!bh2)
                             {
                                 if (this.InvokeRequired)
                                 {
@@ -627,7 +713,7 @@ namespace CanHoaChat
                                         break;
                                 }
                             }
-                           
+
                             choqua = true;
                             //Cân xong toàn bộ chất
                             if (i == dtMaterialDetail.Rows.Count)
@@ -741,7 +827,8 @@ namespace CanHoaChat
         }
 
         private void SetTimerCheckTram2(string text)
-        {          this.timer6.Enabled = true;
+        {
+            this.timer6.Enabled = true;
         }
         private void DongThung(string text)
         {
@@ -794,6 +881,7 @@ namespace CanHoaChat
         {
             if (text == "1") //Update tạm bì hộp
                 SQL_Conn.updateAuTemp_V2(cbMO.Text.ToString(), txtCanAu.WaterMark, txtQRAu.Text, stt.ToString(), 1);
+
             if (text == "4") //Update chi tiết hóa chất
             {
                 if (!quytrinh1)
@@ -836,7 +924,7 @@ namespace CanHoaChat
             for (int i = 0; i < dtTarget.Rows.Count; i++)
             {
                 DataRow[] r = null;
-                if(!bh2)
+                if (!bh2)
                 {
                     r = dtAllBucketActive.Select(@"Part_PartNum = '" + dtTarget.Rows[i]["MaterialCode"] + "'");
                     if (r.Length > 0)
@@ -844,7 +932,7 @@ namespace CanHoaChat
                         dgv[i, 0] = r[0]["Part_PartDescription"].ToString();
                         dgv[i, 1] = dtTarget.Rows[i]["Weight"].ToString();
                     }
-                }                  
+                }
                 else
                 {
                     r = dtBuckets.Select(@"JobMtl_PartNum = '" + dtTarget.Rows[i]["MaterialCode"] + "'");
@@ -853,7 +941,7 @@ namespace CanHoaChat
                         dgv[i, 0] = r[0]["JobMtl_Description"].ToString();
                         dgv[i, 1] = dtTarget.Rows[i]["Weight"].ToString();
                     }
-                }                               
+                }
             }
 
 
@@ -966,6 +1054,7 @@ namespace CanHoaChat
                             //QR Au không rỗng thì cân số bì của âu
                             if (QRAu != "")
                             {
+
                                 if (this.InvokeRequired)
                                 {
 
@@ -974,11 +1063,26 @@ namespace CanHoaChat
                                         (d, new object[] { "" });
                                 }
 
-                                while (timer3.Enabled)
+                                for (int o = 0; ; o++)
                                 {
-                                    result = COMgetAu();
-                                    Thread.Sleep(70); //Dừng 0.2s
+                                    if (this.InvokeRequired)
+                                    {
+
+                                        SetTimerCheckAu d = new SetTimerCheckAu(SetTimer);
+                                        this.Invoke
+                                            (d, new object[] { "" });
+                                    }
+
+                                    while (timer3.Enabled)
+                                    {
+                                        result = COMgetAu();
+                                        Thread.Sleep(70); //Dừng 0.2s
+                                    }
+
+                                    if (result == "OK")
+                                        break;
                                 }
+
 
                                 //Đủ 10s
                                 if (timer3.Enabled == false)
@@ -1010,6 +1114,7 @@ namespace CanHoaChat
                                         this.txtQRAu.Text = "";
                                     }
                                     txtCanAu.WaterMark = "0"; //Set Khối lượng Âu về 0 dùng WaterMart trong textbox
+                                    result = "";
                                     soau++; //Tăng số âu tiếp theo
                                 }
                             }
@@ -1028,8 +1133,11 @@ namespace CanHoaChat
                     }
                 }
             else
-                while (stt <= int.Parse(dtChoose.Rows[0]["BatchNo"].ToString()))
+            {
+                var r = dtMaterialDetail.Select("AuNumber = MAX(AuNumber)");
+                while (stt <= int.Parse(r[0]["AuNumber"].ToString()))
                 {
+                    //Update thêm vào bảng Detail từ QRAu
                     Au[stt - 1, 0] = stt.ToString(); //Gán QR vào mảng Au
                     Au[stt - 1, 1] = "0"; //Gán khối lượng bì của âu
                     Total[stt - 1, 0] = stt.ToString(); //Gán QR vào mảng Total
@@ -1041,11 +1149,10 @@ namespace CanHoaChat
                         this.Invoke
                             (d, new object[] { "1" });
                     }
-
-                    //Update thêm vào bảng Detail từ QRAu
-
                     stt++;
                 }
+            }
+
             checkAu = true; //Kiểm tra âu thành công
         }
 
@@ -1162,15 +1269,15 @@ namespace CanHoaChat
                     PLCClose();
 
                     a.Abort();
-                    
-                    string job = txtJob.Text.Substring(0, 11);
+
+                    string job = jobspilit[0];
                     DataTable dtMO = SQL_Conn.GetMOFromJob(job);
                     if (dtMO.Rows.Count > 0)
                     {
                         cbMO.DataSource = dtMO;
                         cbMO.DisplayMember = "ManufactureOrderNo";
                         cbMO.ValueMember = "ManufactureOrderNo";
-                        msg m = new msg("Mã lệnh " + moTB +  " đã hoàn thành");
+                        msg m = new msg("Mã lệnh " + moTB + " đã hoàn thành");
                         UCCanBanTuDong_Load(this, null);
                         m.TopMost = true;
                         m.Show();
@@ -1358,6 +1465,7 @@ namespace CanHoaChat
                 string khoiluong = dtTarget.Rows[i]["RealWeight"].ToString();
                 offset = offset + 20;
                 graphic.DrawString(tenchat + " - " + khoiluong + "g", new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+                //Issue_Material(dtTarget.Rows[i]["MaterialCode"].ToString(), double.Parse(khoiluong));
             }
             offset = offset + (int)fontHeight; //make the spacing consistent
             graphic.DrawString("----------------------------------", font, new SolidBrush(Color.Black), startX, startY + offset);
@@ -1398,7 +1506,14 @@ namespace CanHoaChat
             QRCodeData _qrCodeData = _qrCode.CreateQrCode(qrcode, QRCodeGenerator.ECCLevel.Q);
             QRCode qrCode = new QRCode(_qrCodeData);
             Bitmap qrCodeImage = qrCode.GetGraphic(20);
-            graphic.DrawImage(qrCodeImage, startX + 60, startY + offset, 100, 100);
+            graphic.DrawImage(qrCodeImage, startX + 25, startY + offset, 70, 70);
+            graphic.DrawString("Nguyên vật liệu", new Font("Segoe UI", 11, FontStyle.Bold), new SolidBrush(Color.Black), startX + 5, startY + offset + 80);
+
+            _qrCodeData = _qrCode.CreateQrCode(dtChoose.Rows[0]["JobNo"].ToString() + "~0~10", QRCodeGenerator.ECCLevel.Q);
+            qrCode = new QRCode(_qrCodeData);
+            qrCodeImage = qrCode.GetGraphic(20);
+            graphic.DrawImage(qrCodeImage, startX + 130, startY + offset, 70, 70);
+            graphic.DrawString("JobNum", new Font("Segoe UI", 11, FontStyle.Bold), new SolidBrush(Color.Black), startX + 130, startY + offset + 80);
             this.Invoke(new MethodInvoker(delegate ()
             {
                 bool b = SQL_Conn.updateQRCode_V2(cbMO.Text.ToString(), soauhientai, 0, qrcode, ngayin, thoigianin, khoiluong, 1); //Cập nhật QR code
@@ -1407,7 +1522,7 @@ namespace CanHoaChat
                     b = SQL_Conn.updateQRCode_V2(cbMO.Text.ToString(), soauhientai, 0, qrcode, ngayin, thoigianin, khoiluong, 1); //Cập nhật QR code
                     Thread.Sleep(3000);
                 }
-            }));       
+            }));
         }
         public void CreateReceipt_PhieuCan(object sender, System.Drawing.Printing.PrintPageEventArgs e)
         {
@@ -1523,6 +1638,7 @@ namespace CanHoaChat
             if (!inlai)
             {
                 offset = offset + 20;
+                //Issue_Material(tenhoachatT2, double.Parse(sokgT2));
                 DataRow[] r = AllBuckets.Select(@"Part_PartNum = '" + tenhoachatT2 + "'");
                 if (r.Length > 0)
                 {
@@ -1564,7 +1680,7 @@ namespace CanHoaChat
                 graphic.DrawString("Số thùng: " + soauhientai + "-" + countLast_hoachat.ToString(), new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             else
                 graphic.DrawString("Số thùng: " + soauhientai, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
-           
+
             //if (makeokg != 25.ToString())
             //    graphic.DrawString("LẺ", new Font("Segoe UI", 30, FontStyle.Bold), new SolidBrush(Color.Black), startX + 215, startY + offset);
             offset = offset + 30;
@@ -1575,10 +1691,10 @@ namespace CanHoaChat
             else
                 graphic.DrawString("Mã lệnh: " + cbMOPrint.Text, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 30; //make some room so that the total stands out.
-            if(inlai)
-                graphic.DrawString("Job No: " + txtInLai.Text.Substring(0,11), new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            if (inlai)
+                graphic.DrawString("Job No: " + jobspilit[0], new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             else
-                graphic.DrawString("Job No: " + txtJob.Text.Substring(0, 11), new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+                graphic.DrawString("Job No: " + jobspilit[0], new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 30; //make some room so that the total stands out.
             graphic.DrawString("Giờ cân: " + thoigianin, new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset); ;
             offset = offset + 30; //make some room so that the total stands out.
@@ -1592,7 +1708,19 @@ namespace CanHoaChat
             QRCodeData _qrCodeData = _qrCode.CreateQrCode(qrcode, QRCodeGenerator.ECCLevel.Q);
             QRCode qrCode = new QRCode(_qrCodeData);
             Bitmap qrCodeImage = qrCode.GetGraphic(20);
-            graphic.DrawImage(qrCodeImage, startX + 60, startY + offset, 100, 100);
+            graphic.DrawImage(qrCodeImage, startX + 25, startY + offset, 70, 70);
+            graphic.DrawString("Nguyên vật liệu", new Font("Segoe UI", 11, FontStyle.Bold), new SolidBrush(Color.Black), startX + 5, startY + offset + 80);
+
+            if (!inlai)
+                _qrCodeData = _qrCode.CreateQrCode(jobspilit[0] + "~0~10", QRCodeGenerator.ECCLevel.Q);
+            else
+                _qrCodeData = _qrCode.CreateQrCode(jobspilit[0] + "~0~10", QRCodeGenerator.ECCLevel.Q);
+            qrCode = new QRCode(_qrCodeData);
+            qrCodeImage = qrCode.GetGraphic(20);
+            graphic.DrawImage(qrCodeImage, startX + 130, startY + offset, 70, 70);
+            graphic.DrawString("JobNum", new Font("Segoe UI", 11, FontStyle.Bold), new SolidBrush(Color.Black), startX + 130, startY + offset + 80);
+            graphic.DrawString("JobNum", new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX + 130, startY + 80);
+
             if (!inlai)
             {
                 bool b = SQL_Conn.updateQRCode_V2(cbMO.Text.ToString(), soauhientai, countLast_hoachat, qrcode, ngayin, thoigianin, 0.ToString(), 2); //Cập nhật QR code
@@ -1633,7 +1761,10 @@ namespace CanHoaChat
                         tenchat = item["Part_PartDescription"].ToString();
                 }
                 graphic.DrawString(tenchat + " - " + dtTarget.Rows[i]["RealWeight"].ToString() + "g", new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+                //if(!inlai)
+                //Issue_Material(dtTarget.Rows[i]["MaterialCode"].ToString(), double.Parse(dtTarget.Rows[i]["RealWeight"].ToString()));
             }
+
             offset = offset + (int)fontHeight; //make the spacing consistent
             graphic.DrawString("----------------------------------", font, new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 20; //make some room so that the total stands out.
@@ -1646,7 +1777,7 @@ namespace CanHoaChat
             //offset = offset + 30; //make some room so that the total stands out.
             graphic.DrawString("Mã lệnh: " + dtTarget.Rows[0]["ManufactureOrderNo"].ToString(), new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 30; //make some room so that the total stands out.
-            graphic.DrawString("Số Job: " + txtJob.Text.Substring(0,11), new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
+            graphic.DrawString("Số Job: " + jobspilit[0], new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             offset = offset + 30; //make some room so that the total stands out.
             //graphic.DrawString("Tổng khối lượng: " + khoiluong + "g", new Font("Segoe UI", 12, FontStyle.Bold), new SolidBrush(Color.Black), startX, startY + offset);
             //offset = offset + 30; //make some room so that the total stands out.
@@ -1663,7 +1794,14 @@ namespace CanHoaChat
             QRCodeData _qrCodeData = _qrCode.CreateQrCode(qrcode, QRCodeGenerator.ECCLevel.Q);
             QRCode qrCode = new QRCode(_qrCodeData);
             Bitmap qrCodeImage = qrCode.GetGraphic(20);
-            graphic.DrawImage(qrCodeImage, startX + 60, startY + offset, 100, 100);
+            graphic.DrawImage(qrCodeImage, startX + 25, startY + offset, 70, 70);
+            graphic.DrawString("Nguyên vật liệu", new Font("Segoe UI", 11, FontStyle.Bold), new SolidBrush(Color.Black), startX + 5, startY + offset + 80);
+
+            _qrCodeData = _qrCode.CreateQrCode(jobspilit[0] + "~0~10", QRCodeGenerator.ECCLevel.Q);
+            qrCode = new QRCode(_qrCodeData);
+            qrCodeImage = qrCode.GetGraphic(20);
+            graphic.DrawImage(qrCodeImage, startX + 130, startY + offset, 70, 70);
+            graphic.DrawString("JobNum", new Font("Segoe UI", 11, FontStyle.Bold), new SolidBrush(Color.Black), startX + 130, startY + offset + 80);
 
             this.Invoke(new MethodInvoker(delegate ()
             {
@@ -1674,7 +1812,7 @@ namespace CanHoaChat
                     Thread.Sleep(3000);
                 }
             }));
-            
+
         }
         public void CreateReceipt_InLai(object sender, System.Drawing.Printing.PrintPageEventArgs e)
         {
@@ -1699,7 +1837,7 @@ namespace CanHoaChat
             dtTarget = CheckPrint.Clone();
             DataRow[] rowsToCopy;
             rowsToCopy = CheckPrint.Select("AuNumber = " + soauhientai);
-            if (rowsToCopy.Length > 1)
+            if (rowsToCopy.Length >= 1)
             {
                 foreach (DataRow temp in rowsToCopy)
                 {
@@ -1748,14 +1886,21 @@ namespace CanHoaChat
             QRCodeData _qrCodeData = _qrCode.CreateQrCode(QRCode, QRCodeGenerator.ECCLevel.Q);
             QRCode qrCode = new QRCode(_qrCodeData);
             Bitmap qrCodeImage = qrCode.GetGraphic(20);
-            graphic.DrawImage(qrCodeImage, startX + 60, startY + offset, 100, 100);
+            graphic.DrawImage(qrCodeImage, startX + 25, startY + offset, 70, 70);
+            graphic.DrawString("Nguyên vật liệu", new Font("Segoe UI", 11, FontStyle.Bold), new SolidBrush(Color.Black), startX + 5, startY + offset + 80);
+
+            _qrCodeData = _qrCode.CreateQrCode(JobNo + "~0~10", QRCodeGenerator.ECCLevel.Q);
+            qrCode = new QRCode(_qrCodeData);
+            qrCodeImage = qrCode.GetGraphic(20);
+            graphic.DrawImage(qrCodeImage, startX + 130, startY + offset, 70, 70);
+            graphic.DrawString("JobNum", new Font("Segoe UI", 11, FontStyle.Bold), new SolidBrush(Color.Black), startX + 130, startY + offset + 80);
         }
 
         int demau = 1;
         private void timer3_Tick(object sender, EventArgs e)
         {
             demau++;
-            if (demau == 8)
+            if (demau == 5)
             {
                 timer3.Enabled = false;
                 demau = 1;
@@ -1810,7 +1955,7 @@ namespace CanHoaChat
         string BinSTT = "";
         private void btIn2_Click(object sender, EventArgs e)
         {
-            if(cbChonThung.Text == "" && quytrinh1)
+            if (cbChonThung.Text == "" && quytrinh1)
             {
                 cbChonThung.Focus();
             }
@@ -1932,16 +2077,59 @@ namespace CanHoaChat
                 txtInLai.SelectAll();
                 txtInLai.Focus();
                 countLast_hoachat = 0;
-            }           
+            }
         }
 
         private void txtQRCode_TextChanged(object sender, EventArgs e)
         {
-            
+
         }
 
         int show = 0;
         msg m;
+
+        public void test()
+        {
+            var dtMaterialDetail = SQL_Conn.GetDetailPrint_V2("1MO2311080017");
+            var dtPrintT2 = SQL_Conn.SelectDetail_V2("1MO2311080017", 2);
+            PrintDocument printDocument = new PrintDocument(); //add the document to the dialog box..
+            printDocument.DefaultPageSettings.PaperSize.RawKind = 119;
+            printDocument.PrinterSettings.DefaultPageSettings.PaperSize.RawKind = 119;
+            printDocument.DefaultPageSettings.Landscape = false;
+            printDocument.PrinterSettings.PrinterName = printerName;
+
+            dtTarget = dtPrintT2.Clone();
+            var rowsToCopy = dtMaterialDetail.Select("ChemStatus = 1 and intime = '' and BinSTT > 0");
+            if (rowsToCopy.Length > 0)
+            {
+                foreach (DataRow temp in rowsToCopy)
+                {
+                    dtTarget.ImportRow(temp);
+                }
+
+                for (int i = 0; i < dtTarget.Rows.Count; i++)
+                {
+                    tenhoachatT2 = dtTarget.Rows[i]["MaterialCode"].ToString();
+                    sokgT2 = dtTarget.Rows[i]["RealWeight"].ToString();
+                    tenthung = dtTarget.Rows[i]["AuNumber"].ToString();
+                    thoigianin = DateTime.Now.ToString("HH:mm:ss");
+                    ngayin = DateTime.Now.ToString("dd-MM-yyyy");
+                    soauhientai = int.Parse(tenthung);
+                    countLast_hoachat = int.Parse(dtTarget.Rows[i]["BinSTT"].ToString());
+                    if (double.Parse(dtChoose.Rows[0]["Weight"].ToString()) >= 25)
+                        makeokg = 25.ToString();
+                    else
+                    {
+                        makeokg = dtChoose.Rows[0]["Weight"].ToString();
+                    }
+
+                    printDocument.PrintPage += new System.Drawing.Printing.PrintPageEventHandler(CreateReceipt_quytrinh1_T2); //add an event handler that will do the printing
+                                                                                                                              //on a till you will not want to ask the user where to print but this is fine for the test envoironment.
+                    printDocument.Print();
+                }
+            }
+        }
+
         private void timer6_Tick(object sender, EventArgs e)
         {
             try
@@ -1950,7 +2138,7 @@ namespace CanHoaChat
                     m = new msg("Chờ cân trạm 2");
                 timeout = 0;
                 btDongThung.Visible = false;
-
+                DataRow[] rowsToCopy;
                 if (quytrinh1)
                 {
                     //Lấy từ CBK
@@ -1964,7 +2152,6 @@ namespace CanHoaChat
                     if (dtPrintT2.Rows.Count > 0)
                     {
                         dtTarget = dtPrintT2.Clone();
-                        DataRow[] rowsToCopy;
                         rowsToCopy = dtPrintT2.Select("ChemStatus = 1 and intime = '' and BinSTT = 0");
                         if (rowsToCopy.Length > 1)
                         {
@@ -1995,7 +2182,8 @@ namespace CanHoaChat
                         }
 
                         dtTarget = dtPrintT2.Clone();
-                        rowsToCopy = dtMaterialDetail.Select("ChemStatus = 1 and intime = '' and BinSTT > 0");
+                        rowsToCopy = dtPrintT2.Select("ChemStatus = 1 and intime = '' and BinSTT > 0");
+
                         if (rowsToCopy.Length > 0)
                         {
                             foreach (DataRow temp in rowsToCopy)
@@ -2025,6 +2213,8 @@ namespace CanHoaChat
                             }
                         }
                     }
+
+                    dtPrintT2.Dispose();
                 }
 
                 DataTable dt = SQL_Conn.CheckAll_V2(cbMO.Text.ToString());
@@ -2054,6 +2244,8 @@ namespace CanHoaChat
                         m.Show();
                         show++;
                     }
+
+                    rowsToCopy = null; 
                 }
 
 
@@ -2134,13 +2326,15 @@ namespace CanHoaChat
             if (txtInLai.Text.Length >= 15)
             {
                 //Get MO
-                JobNo = txtInLai.Text.Substring(0, 11);
+                jobspilit = txtInLai.Text.Split('~');
+                JobNo = jobspilit[0];
+                //JobNo = txtInLai.Text.Substring(0, 11);
                 if (JobNo.Substring(0, 3) == "JRR")
                     quytrinh1 = true;
                 else
                     quytrinh1 = false;
 
-                DataTable dtMO = SQL_Conn.GetMO_V2(JobNo);               
+                DataTable dtMO = SQL_Conn.GetMO_V2(JobNo);
                 cbMOPrint.DataSource = dtMO;
                 cbMOPrint.DisplayMember = "ManufactureOrderNo";
                 cbMOPrint.ValueMember = "ManufactureOrderNo";
@@ -2201,12 +2395,14 @@ namespace CanHoaChat
         }
 
 
-
+        string[] jobspilit = null;
         private void txtJob_TextChanged(object sender, EventArgs e)
         {
             if (txtJob.Text.Trim().Length >= 15)
             {
-                string job = txtJob.Text.Substring(0, 11);
+                jobspilit = txtJob.Text.Split('~');
+                //string job = txtJob.Text.Substring(0, 11);
+                string job = jobspilit[0];
                 HttpResponseMessage response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_JobInfo?JobNo=" + job).Result;
                 while (response.IsSuccessStatusCode == false)
                 {
@@ -2215,7 +2411,8 @@ namespace CanHoaChat
                 }
 
                 DataTable dt = GetDataTableFromJsonString(response.Content.ReadAsStringAsync().Result);
-                if(dt.Rows.Count > 0)
+                
+                if (dt.Rows.Count > 0)
                 {
                     if (txtJob.Text.Trim().Substring(0, 3) == "JRR" || txtJob.Text.Trim().Substring(0, 3) == "JCB" || txtJob.Text.Trim().Substring(0, 3) == "JOB")
                     {
@@ -2223,7 +2420,7 @@ namespace CanHoaChat
                         dtJob = SQL_Conn.CheckJobStatus_V2(job);
                         if (dtJob.Rows.Count == 0)
                         {
-                            if(dt.Rows[0]["JobHead_PartNum"].ToString().Substring(0,7).ToUpper() == "ASS_RRC")
+                            if (dt.Rows[0]["JobHead_PartNum"].ToString().Substring(0, 7).ToUpper() == "ASS_RRC")
                             {
                                 if (double.Parse(dt.Rows[0]["JobHead_ProdQty"].ToString()) % double.Parse(dt.Rows[0]["UDCodes6_LongDesc"].ToString()) != 0)
                                 {
@@ -2287,7 +2484,7 @@ namespace CanHoaChat
                     txtJob.Focus();
                     txtJob.SelectAll();
                 }
-               
+
             }
         }
 
@@ -2338,7 +2535,7 @@ namespace CanHoaChat
 
         private void cbMO_SelectedIndexChanged(object sender, EventArgs e)
         {
-            
+
         }
 
         private void btStartCan_Click(object sender, EventArgs e)
@@ -2357,12 +2554,12 @@ namespace CanHoaChat
                     SQL_Conn.updateMOLocation(cbMO.Text, bh2);
 
                     var JobNoTB = SQL_Conn.SelectRunMO_V2(bh2);
-                    response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_AllBinInJob?JobNo=" + txtJob.Text.Substring(0,11)).Result;
+                    response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_AllBinInJob?JobNo=" + jobspilit[0]).Result;
 
                     while (response.IsSuccessStatusCode == false)
                     {
                         Thread.Sleep(3000);
-                        response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_AllBinInJob?JobNo=" + txtJob.Text.Substring(0, 11)).Result;
+                        response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_AllBinInJob?JobNo=" + jobspilit[0]).Result;
                     }
                     AllBuckets = GetDataTableFromJsonString(response.Content.ReadAsStringAsync().Result);
 
@@ -2415,9 +2612,25 @@ namespace CanHoaChat
                             quytrinh1 = true;
                         }
                         else
-                            quytrinh1 = false;
+                        {
+                            response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_CheckC1?JobNum=" + dtChoose.Rows[0]["JobNo"].ToString()).Result;
+                            while (response.IsSuccessStatusCode == false)
+                            {
+                                Thread.Sleep(3000);
+                                response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_COH?JobNum=" + dtChoose.Rows[0]["JobNo"].ToString()).Result;
+                            }
+                            var CheckC1 = GetDataTableFromJsonString(response.Content.ReadAsStringAsync().Result);
 
+                            if (CheckC1.Rows.Count == 0)
+                                quytrinh1 = false;
+                            else
+                                quytrinh1 = true;
+                        }
                         HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, client.BaseAddress + "ERP_LIVE/api/v1/Erp.BO.IssueReturnSvc/PerformMaterialMovement");
+                        
+                        
+                        
+                        
                         response = client.GetAsync("ERP_LIVE/api/v1/BaqSvc/ESN_Scale_COH?JobNum=" + dtChoose.Rows[0]["JobNo"].ToString()).Result;
                         while (response.IsSuccessStatusCode == false)
                         {
@@ -2511,8 +2724,19 @@ namespace CanHoaChat
                         dtMaterialDetail = SQL_Conn.SelectDetail_V2(cbMO.Text.ToString(), 1);
                         MaterialTemp = SQL_Conn.SelectCommandTemp_V2(cbMO.Text.ToString(), 1);
 
-                        Au = new string[int.Parse(dtChoose.Rows[0]["BatchNo"].ToString()), 2]; //Khai báo số Âu theo lệnh điều động
-                        Total = new string[int.Parse(dtChoose.Rows[0]["BatchNo"].ToString()), 2]; //Khai báo tổng số lượng của từng âu
+                        //Thêm check quy trình 1 cân chung âu
+                        if (quytrinh1)
+                        {
+                            var r = dtMaterialDetail.Select("AuNumber = MAX(AuNumber)");
+                            Au = new string[int.Parse(r[0]["AuNumber"].ToString()), 2]; //Khai báo số Âu theo lệnh điều động
+                            Total = new string[int.Parse(r[0]["AuNumber"].ToString()), 2]; //Khai báo tổng số lượng của từng âu
+                        }
+                        else
+                        {
+                            Au = new string[int.Parse(dtChoose.Rows[0]["BatchNo"].ToString()), 2]; //Khai báo số Âu theo lệnh điều động
+                            Total = new string[int.Parse(dtChoose.Rows[0]["BatchNo"].ToString()), 2]; //Khai báo tổng số lượng của từng âu
+                        }
+
 
                         //Gán dữ liệu để quét tiếp nếu bị lỗi cân khi đang quét
                         for (int i = 0; i < MaterialTemp.Rows.Count; i++)

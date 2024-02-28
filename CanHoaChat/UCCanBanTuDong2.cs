@@ -128,7 +128,7 @@ namespace CanHoaChat
             catch { }
 
             client = new HttpClient(handler);
-            client.BaseAddress = new Uri("https://srv-epi-app/");
+            client.BaseAddress = new Uri("https://srv-epi-app.essons.vn/");
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.
                 MediaTypeWithQualityHeaderValue("application/json"));
@@ -165,6 +165,7 @@ namespace CanHoaChat
             if (comport.IsOpen == true)
                 comport.Close();
         }
+
         public void PLCClose()
         {
             try
@@ -179,6 +180,7 @@ namespace CanHoaChat
                 m.Show();
             }
         }
+
         public void PLCOpen()
         {
             try
@@ -415,11 +417,20 @@ namespace CanHoaChat
                 Total = new string[int.Parse(dtChoose.Rows[0]["BatchNo"].ToString()), 2]; //Khai báo tổng số lượng của từng âu
 
                 //Gán dữ liệu để quét tiếp nếu bị lỗi cân khi đang quét
-                for (int i = 0; i < MaterialTemp.Rows.Count; i++)
+                if(quytrinh1)
                 {
-                    Au[i, 0] = MaterialTemp.Rows[i][1].ToString();
-                    Au[i, 1] = MaterialTemp.Rows[i][4].ToString();
+                    Au[0, 0] = "";
+                    Au[0, 1] = "";
                 }
+                else
+                {
+                    for (int i = 0; i < MaterialTemp.Rows.Count; i++)
+                    {
+                        Au[i, 0] = MaterialTemp.Rows[i][1].ToString();
+                        Au[i, 1] = MaterialTemp.Rows[i][4].ToString();
+                    }
+                }
+
 
                 //Gán thông tin keo mà tổng số âu
                 lbSoKG.Text = "Số kg: " + dtChoose.Rows[0]["Weight"].ToString();
@@ -595,11 +606,8 @@ namespace CanHoaChat
 
             for (int i = 0; i < dtMaterialDetail.Rows.Count; i++)
             {
-                if (dtMaterialDetail.Rows[i]["ChemStatus"].ToString() == "1" || dtMaterialDetail.Rows[i]["MachineNo"].ToString() == "1")
-                    continue;
-
                 MaterialCode = dtMaterialDetail.Rows[i]["MaterialCode"].ToString().Trim();
-                //Set den, mo thung plc    
+                //Lấy dữ liệu đèn, mở thùng plc    
                 try
                 {
                     var row = dtBucket.Select("UDCodes_LongDesc = '" + MaterialCode + "'");
@@ -612,6 +620,23 @@ namespace CanHoaChat
                 }
                 catch { }
 
+                if (dtMaterialDetail.Rows[i]["ChemStatus"].ToString() == "1" || dtMaterialDetail.Rows[i]["MachineNo"].ToString() == "1")
+                {
+                    if (dtMaterialDetail.Select("MaterialCode = '" + MaterialCode + "'").Length == dtMaterialDetail.Select("ChemStatus = 1 and MaterialCode = '" + MaterialCode + "'").Length)
+                    {
+                        try
+                        {
+                            cJ2Compolet1.ForceCancel(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(light[0]), Int16.Parse(light[1]));
+                        }
+                        catch
+                        {
+
+                        }
+                    }
+                    continue;
+                }
+
+                //Set mo thung plc    
                 try
                 {
                     cJ2Compolet1.ForceSet(OMRON.Compolet.CIP.CJ2Compolet.ForceMemoryTypes.CIO, int.Parse(open[0]), Int16.Parse(open[1]));
@@ -1071,6 +1096,11 @@ namespace CanHoaChat
             }
             else
                 btXacNhan.Enabled = false;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
